@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <h1 class="fw-bold m-0">My Bookings</h1>
+    <a href="{{ url_for('main.list_resources') }}" class="btn btn-outline-primary">Browse More</a>
+</div>
+
+<div class="dashboard-section p-0 overflow-hidden">
+    {% if bookings %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Resource</th>
+                    <th>Dates</th>
+                    <th>Status</th>
+                    <th>Owner</th>
+                    <th class="pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td class="ps-4 py-3">
+                        <div class="fw-bold">{{ booking.resource.title }}</div>
+                        <small class="text-muted">{{ booking.resource.category }}</small>
+                    </td>
+                    <td>
+                        <div class="text-nowrap">{{ booking.start_date.strftime('%b %d, %Y') }}</div>
+                        <small class="text-muted">to {{ booking.end_date.strftime('%b %d, %Y') }}</small>
+                    </td>
+                    <td>
+                        {% if booking.status == 'pending' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                        {% elif booking.status == 'approved' %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Approved</span>
+                        {% elif booking.status == 'rejected' %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                        {% elif booking.status == 'completed' %}
+                            <span class="badge bg-secondary"><i class="bi bi-clock-history me-1"></i>Completed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ booking.resource.owner.username }}
+                        <a href="mailto:{{ booking.resource.owner.email }}" class="d-block small text-decoration-none">Contact</a>
+                    </td>
+                    <td class="pe-4">
+                        <a href="{{ url_for('main.resource_detail', resource_id=booking.resource_id) }}" class="btn btn-sm btn-outline-secondary">View Resource</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-calendar-x display-1 text-muted"></i>
+        <h3 class="mt-3">No bookings yet</h3>
+        <p class="text-muted">You haven't requested to borrow any resources.</p>
+        <a href="{{ url_for('main.list_resources') }}" class="btn btn-primary mt-2">Find Resources to Borrow</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

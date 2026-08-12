@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 mt-3 mb-4">
+    <div class="card bg-surface border-color shadow-sm overflow-hidden" style="min-height: 80vh;">
+        <div class="row g-0 h-100" style="min-height: 80vh;">
+            
+            <!-- LEFT PANEL: Conversations Sidebar -->
+            <div class="col-md-4 col-lg-3 border-end border-color d-flex flex-column bg-surface">
+                <div class="p-3 border-bottom border-color d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold m-0"><i class="bi bi-chat-square-dots text-primary me-2"></i>Direct Messages</h5>
+                    <span class="badge bg-primary rounded-pill">{{ contacts|length }} Contacts</span>
+                </div>
+                
+                <div class="p-2 border-bottom border-color">
+                    <input type="text" id="contactSearch" class="form-control form-control-sm bg-main border-color text-primary" placeholder="Search messages or people...">
+                </div>
+
+                <div class="list-group list-group-flush overflow-auto flex-grow-1" id="contactsList" style="max-height: calc(80vh - 110px);">
+                    {% for contact in contacts %}
+                    <a href="{{ url_for('main.messages', recipient_id=contact.id) }}" class="list-group-item list-group-item-action border-0 py-3 px-3 d-flex align-items-center gap-3 contact-item {% if active_recipient and active_recipient.id == contact.id %}active-chat{% endif %}">
+                        <div class="position-relative">
+                            <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 46px; height: 46px; font-size: 1.3rem;">
+                                {{ contact.username[0] | upper }}
+                            </div>
+                            {% if contact.unread_message_count() > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                    <span class="visually-hidden">Unread</span>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0 fw-bold text-truncate contact-name">{{ contact.username }}</h6>
+                                <small class="text-secondary small">Chat</small>
+                            </div>
+                            <small class="text-secondary text-truncate d-block">Click to view conversation</small>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="text-center py-5 text-secondary">
+                        <i class="bi bi-chat-left-dots fs-1"></i>
+                        <p class="mt-2 small">No messages yet.<br>Start a chat with any resource owner!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Chat Thread -->
+            <div class="col-md-8 col-lg-9 d-flex flex-column bg-main">
+                {% if active_recipient %}
+                <!-- Chat Header -->
+                <div class="p-3 bg-surface border-bottom border-color d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 42px; height: 42px; font-size: 1.2rem;">
+                            {{ active_recipient.username[0] | upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ active_recipient.username }}</h6>
+                            <small class="text-secondary">
+                                <i class="bi bi-star-fill text-warning"></i> {{ "%.1f"|format(active_recipient.rating or 5.0) }} &middot; 
+                                <a href="{{ url_for('main.user_profile', user_id=active_recipient.id) }}" class="text-decoration-none text-primary">View Profile</a>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        {% if current_user.is_following(active_recipient) %}
+                            <a href="{{ url_for('main.unfollow_user', user_id=active_recipient.id) }}" class="btn btn-sm btn-outline-secondary">Following</a>
+                        {% else %}
+                            <a href="{{ url_for('main.follow_user', user_id=active_recipient.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus-fill me-1"></i> Follow</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Optional Item Context Banner -->
+                {% if resource_context %}
+                <div class="bg-primary bg-opacity-10 border-bottom border-color p-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-box-seam text-primary fs-5"></i>
+                        <span class="small fw-semibold text-primary">Inquiring about: <strong>{{ resource_context.title }}</strong></span>
+                    </div>
+                    <a href="{{ url_for('main.resource_detail', resource_id=resource_context.id) }}" class="btn btn-xs btn-outline-primary py-0 text-nowrap">View Listing &rarr;</a>
+                </div>
+                {% endif %}
+
+                <!-- Chat Messages Scroll Stream -->
+                <div class="flex-grow-1 p-4 overflow-auto d-flex flex-column gap-3" id="chatThread" style="max-height: calc(80vh - 160px);">
+                    {% for msg in chat_messages %}
+                        {% if msg.sender_id == current_user.id %}
+                        <!-- Sent Message (Right Bubble) -->
+                        <div class="d-flex flex-column align-items-end align-self-end style-msg-sent" style="max-width: 70%;">
+                            <div class="bg-primary text-white p-3 rounded-3 shadow-sm" style="border-bottom-right-radius: 4px !important;">
+                                {{ msg.body }}
+                            </div>
+                            <small class="text-secondary mt-1" style="font-size: 0.72rem;">{{ msg.timestamp.strftime('%I:%M %p') }}</small>
+                        </div>
+                        {% else %}
+                        <!-- Received Message (Left Bubble) -->
+                        <div class="d-flex flex-column align-items-start align-self-start style-msg-received" style="max-width: 70%;">
+                            <div class="d-flex align-items-end gap-2">
+                                <div class="bg-surface border border-color p-3 rounded-3 shadow-sm text-primary" style="border-bottom-left-radius: 4px !important;">
+                                    {{ msg.body }}
+                                </div>
+                            </div>
+                            <small class="text-secondary mt-1 ms-1" style="font-size: 0.72rem;">{{ msg.timestamp.strftime('%I:%M %p') }}</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="text-center py-5 my-auto text-secondary">
+                        <i class="bi bi-chat-heart text-primary opacity-50" style="font-size: 3.5rem;"></i>
+                        <h5 class="fw-bold mt-3">Start a Conversation</h5>
+                        <p class="small">Say hello to {{ active_recipient.username }} and ask about item availability or pickup details!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Bottom Message Input Form -->
+                <div class="p-3 bg-surface border-top border-color">
+                    <form method="POST" action="{{ url_for('main.send_message', recipient_id=active_recipient.id, resource_id=resource_context.id if resource_context else '') }}" class="d-flex gap-2">
+                        {{ form.hidden_tag() }}
+                        <input type="text" name="body" class="form-control bg-main border-color text-primary py-2" placeholder="Message {{ active_recipient.username }}..." required autocomplete="off">
+                        <button type="submit" class="btn btn-primary px-4 d-flex align-items-center gap-1">
+                            <i class="bi bi-send-fill"></i> Send
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <!-- Empty State when no conversation selected -->
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-center text-secondary">
+                    <div class="bg-primary bg-opacity-10 text-primary-brand p-4 rounded-circle mb-3">
+                        <i class="bi bi-chat-square-text fs-1"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary">Your Messages</h4>
+                    <p class="small text-secondary mb-3" style="max-width: 380px;">Send private messages to sellers and buyers on campus to negotiate prices, organize pickups, and clarify details.</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.active-chat {
+    background-color: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.1)) !important;
+    border-left: 4px solid #0d6efd !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-scroll chat thread to bottom
+    const thread = document.getElementById('chatThread');
+    if (thread) {
+        thread.scrollTop = thread.scrollHeight;
+    }
+
+    // Filter contacts list
+    const searchInput = document.getElementById('contactSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.contact-item').forEach(item => {
+                const name = item.querySelector('.contact-name').textContent.toLowerCase();
+                if (name.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

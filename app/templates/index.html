@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- HERO SECTION -->
+<div class="hero-section">
+    <div class="container">
+        <span class="badge bg-primary bg-opacity-10 text-primary-brand mb-3 px-3 py-2 rounded-pill">
+            <i class="bi bi-stars"></i> Welcome to SharedSpace
+        </span>
+        <h1 class="hero-title">Borrow what you need.<br><span class="text-primary-brand">Share what you have.</span></h1>
+        <p class="hero-subtitle">Find books, tools, electronics, and equipment shared by students on campus.</p>
+        
+        <form action="{{ url_for('main.list_resources') }}" method="GET" class="search-bar-container">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" name="search" class="search-input" placeholder="Search books, tools, electronics...">
+            <button type="submit" class="btn btn-primary search-btn px-4 py-2">Search</button>
+        </form>
+        
+        <div class="category-pills">
+            <a href="{{ url_for('main.list_resources', category='Electronics') }}" class="category-pill">Electronics</a> &middot;
+            <a href="{{ url_for('main.list_resources', category='Books') }}" class="category-pill">Books</a> &middot;
+            <a href="{{ url_for('main.list_resources', category='Equipment') }}" class="category-pill">Equipment</a> &middot;
+            <a href="{{ url_for('main.list_resources', category='Tools') }}" class="category-pill">Tools</a> &middot;
+            <a href="{{ url_for('main.list_resources', category='Other') }}" class="category-pill">Other</a>
+        </div>
+
+        <div class="mt-5 d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('main.list_resources') }}" class="btn btn-outline-primary px-4">Browse Resources</a>
+            <a href="{{ url_for('main.create_resource') }}" class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Share a Resource</a>
+        </div>
+    </div>
+</div>
+
+<!-- EXPLORE CATEGORIES -->
+<div class="container mt-5">
+    <div class="row g-4 justify-content-center">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('main.list_resources', category='Electronics') }}" class="cat-card">
+                <div class="cat-icon-container"><i class="bi bi-cpu"></i></div>
+                <div>
+                    <h5 class="mb-0 fs-6">Electronics</h5>
+                    <small class="text-muted">12 items</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('main.list_resources', category='Books') }}" class="cat-card">
+                <div class="cat-icon-container"><i class="bi bi-book"></i></div>
+                <div>
+                    <h5 class="mb-0 fs-6">Books</h5>
+                    <small class="text-muted">45 items</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('main.list_resources', category='Tools') }}" class="cat-card">
+                <div class="cat-icon-container"><i class="bi bi-tools"></i></div>
+                <div>
+                    <h5 class="mb-0 fs-6">Tools</h5>
+                    <small class="text-muted">8 items</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('main.list_resources', category='Equipment') }}" class="cat-card">
+                <div class="cat-icon-container"><i class="bi bi-gear"></i></div>
+                <div>
+                    <h5 class="mb-0 fs-6">Equipment</h5>
+                    <small class="text-muted">15 items</small>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- RECENTLY ADDED -->
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="mb-1">Recently added</h2>
+            <p class="text-muted mb-0">Fresh resources shared by students</p>
+        </div>
+        <a href="{{ url_for('main.list_resources') }}" class="btn btn-link text-primary-brand text-decoration-none">View all &rarr;</a>
+    </div>
+    
+    <div class="row g-4">
+        {% for resource in resources[:3] %}
+        <div class="col-md-6 col-lg-4">
+            <div class="resource-card">
+                <div class="card-img-wrapper">
+                    <img src="{{ resource.image_url or 'https://placehold.co/600x400/1E2A40/F8FAFC?text=No+Image' }}" class="resource-card-img" alt="{{ resource.title }}">
+                    <div class="status-badge">
+                        {% if resource.availability_status == 'Available' %}
+                            <div class="status-dot dot-available"></div> Available
+                        {% elif resource.availability_status == 'Sold' %}
+                            <div class="status-dot dot-maintenance"></div> Sold
+                        {% elif resource.availability_status == 'Borrowed' %}
+                            <div class="status-dot dot-borrowed"></div> Borrowed
+                        {% else %}
+                            <div class="status-dot dot-maintenance"></div> Unavailable
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="cat-tag">{{ resource.category }}</div>
+                        {% if resource.listing_type == 'Sale' %}
+                            <span class="badge bg-success bg-opacity-10 text-success small">For Sale</span>
+                        {% elif resource.listing_type == 'Both' %}
+                            <span class="badge bg-info bg-opacity-10 text-info small">Rent & Sale</span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary small">For Rent</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="resource-title text-truncate">{{ resource.title }}</a>
+                    <p class="resource-desc text-truncate-2">{{ resource.description }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="price-tag">
+                            {% if resource.listing_type == 'Sale' %}
+                                <span class="text-success fw-bold">{{ resource.currency_symbol }}{{ "%.0f"|format(resource.sale_price or 0) }}</span>
+                            {% elif resource.daily_price and resource.daily_price > 0 %}
+                                {{ resource.currency_symbol }}{{ "%.0f"|format(resource.daily_price) }}<span>/day</span>
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-sm btn-primary">View Resource &rarr;</a>
+                    </div>
+                    
+                    <div class="owner-info">
+                        <i class="bi bi-person-circle text-muted"></i> {{ resource.owner.username }} &middot; 
+                        <i class="bi bi-star-fill"></i> {{ "%.1f"|format(resource.owner.rating) if resource.owner.rating else "5.0" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- POPULAR RESOURCES -->
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="mb-1">Popular resources</h2>
+            <p class="text-muted mb-0">Most requested and highly rated</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        {% for resource in resources[::-1][:3] %}
+        <div class="col-md-6 col-lg-4">
+            <div class="resource-card">
+                <div class="card-img-wrapper">
+                    <img src="{{ resource.image_url or 'https://placehold.co/600x400/1E2A40/F8FAFC?text=No+Image' }}" class="resource-card-img" alt="{{ resource.title }}">
+                    <div class="status-badge">
+                        {% if resource.availability_status == 'Available' %}
+                            <div class="status-dot dot-available"></div> Available
+                        {% elif resource.availability_status == 'Sold' %}
+                            <div class="status-dot dot-maintenance"></div> Sold
+                        {% else %}
+                            <div class="status-dot dot-borrowed"></div> Borrowed
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="cat-tag">{{ resource.category }}</div>
+                        {% if resource.listing_type == 'Sale' %}
+                            <span class="badge bg-success bg-opacity-10 text-success small">For Sale</span>
+                        {% elif resource.listing_type == 'Both' %}
+                            <span class="badge bg-info bg-opacity-10 text-info small">Rent & Sale</span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary small">For Rent</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="resource-title text-truncate">{{ resource.title }}</a>
+                    <p class="resource-desc text-truncate-2">{{ resource.description }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="price-tag">
+                            {% if resource.listing_type == 'Sale' %}
+                                <span class="text-success fw-bold">{{ resource.currency_symbol }}{{ "%.0f"|format(resource.sale_price or 0) }}</span>
+                            {% elif resource.daily_price and resource.daily_price > 0 %}
+                                {{ resource.currency_symbol }}{{ "%.0f"|format(resource.daily_price) }}<span>/day</span>
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-sm btn-primary">View Resource &rarr;</a>
+                    </div>
+                    
+                    <div class="owner-info">
+                        <i class="bi bi-person-circle text-muted"></i> {{ resource.owner.username }} &middot; 
+                        <i class="bi bi-star-fill"></i> {{ "%.1f"|format(resource.owner.rating) if resource.owner.rating else "5.0" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="container mt-5 pt-5" id="how-it-works">
+    <h2 class="text-center mb-5">How SharedSpace Works</h2>
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+            <div class="step-card">
+                <div class="step-number">01 &mdash; FIND</div>
+                <div class="mb-3"><i class="bi bi-search fs-1 text-primary-brand"></i></div>
+                <h3 class="step-title">Search for resources</h3>
+                <p class="step-desc">Search for books, tools, and equipment available on your campus.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="step-card">
+                <div class="step-number">02 &mdash; REQUEST</div>
+                <div class="mb-3"><i class="bi bi-send fs-1 text-primary-brand"></i></div>
+                <h3 class="step-title">Send a request</h3>
+                <p class="step-desc">Send a borrow request to the owner specifying the dates you need it.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="step-card">
+                <div class="step-number">03 &mdash; BORROW</div>
+                <div class="mb-3"><i class="bi bi-hand-thumbs-up fs-1 text-primary-brand"></i></div>
+                <h3 class="step-title">Use and return</h3>
+                <p class="step-desc">Pick it up, use it for your project, and return it on time.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM CTA -->
+<div class="container">
+    <div class="bottom-cta">
+        <h2 class="fw-bold mb-3">Have something others need?</h2>
+        <p class="text-secondary mb-4 mx-auto" style="max-width: 500px;">Share your unused books, tools, electronics, and equipment with fellow students and build a better campus community.</p>
+        <a href="{{ url_for('main.create_resource') }}" class="btn btn-primary btn-lg px-5"><i class="bi bi-plus-lg me-1"></i>Share a Resource</a>
+    </div>
+</div>
+{% endblock %}

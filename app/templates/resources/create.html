@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-8">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">{{ legend }}</h1>
+            <p class="text-secondary">Share your unused resources with fellow students.</p>
+        </div>
+        
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <!-- STEP 1 -->
+            <div class="card bg-surface border-color p-4 p-md-5 mb-4 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">1</div>
+                    <h4 class="fw-bold m-0">What are you sharing?</h4>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {% if form.title.errors %}
+                        {{ form.title(class="form-control form-control-lg is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.title.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.title(class="form-control form-control-lg bg-main border-color text-primary", placeholder="E.g., Raspberry Pi 4 8GB") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.category.label(class="form-label") }}
+                    {% if form.category.errors %}
+                        {{ form.category(class="form-select is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.category.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.category(class="form-select bg-main border-color text-primary") }}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- STEP 2 -->
+            <div class="card bg-surface border-color p-4 p-md-5 mb-4 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">2</div>
+                    <h4 class="fw-bold m-0">Resource details</h4>
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.image_url.label(class="form-label") }}
+                    {% if form.image_url.errors %}
+                        {{ form.image_url(class="form-control is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.image_url.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.image_url(class="form-control bg-main border-color text-primary", placeholder="https://unsplash.com/photo...") }}
+                    {% endif %}
+                    <div class="form-text text-secondary">Provide a direct URL to a high-quality photo of your item.</div>
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.description.label(class="form-label") }}
+                    {% if form.description.errors %}
+                        {{ form.description(class="form-control is-invalid bg-main border-color text-primary", rows="4") }}
+                        <div class="invalid-feedback">{% for error in form.description.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.description(class="form-control bg-main border-color text-primary", rows="4", placeholder="Describe the condition, specifications, and any included accessories...") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.listing_type.label(class="form-label fw-bold") }}
+                    {% if form.listing_type.errors %}
+                        {{ form.listing_type(class="form-select is-invalid bg-main border-color text-primary", id="listing_type_select") }}
+                        <div class="invalid-feedback">{% for error in form.listing_type.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.listing_type(class="form-select bg-main border-color text-primary", id="listing_type_select") }}
+                    {% endif %}
+                    <div class="form-text text-secondary">Choose whether you want to offer this item for rent, for direct sale, or both.</div>
+                </div>
+
+                <div class="mb-4">
+                    {{ form.currency.label(class="form-label fw-bold") }}
+                    {% if form.currency.errors %}
+                        {{ form.currency(class="form-select is-invalid bg-main border-color text-primary", id="currency_select") }}
+                        <div class="invalid-feedback">{% for error in form.currency.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.currency(class="form-select bg-main border-color text-primary", id="currency_select") }}
+                    {% endif %}
+                    <div class="form-text text-secondary">Select your preferred transaction currency.</div>
+                </div>
+
+                <div class="mb-3" id="rental-price-container">
+                    {{ form.daily_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-main border-color text-secondary currency-symbol-label">$</span>
+                        {% if form.daily_price.errors %}
+                            {{ form.daily_price(class="form-control is-invalid bg-main border-color text-primary") }}
+                        {% else %}
+                            {{ form.daily_price(class="form-control bg-main border-color text-primary", placeholder="0.00 (Leave blank or 0 if free)") }}
+                        {% endif %}
+                        <span class="input-group-text bg-main border-color text-secondary">/ day</span>
+                    </div>
+                    {% if form.daily_price.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.daily_price.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3" id="sale-price-container">
+                    {{ form.sale_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-main border-color text-secondary currency-symbol-label">$</span>
+                        {% if form.sale_price.errors %}
+                            {{ form.sale_price(class="form-control is-invalid bg-main border-color text-primary") }}
+                        {% else %}
+                            {{ form.sale_price(class="form-control bg-main border-color text-primary", placeholder="0.00 (Total purchase price)") }}
+                        {% endif %}
+                    </div>
+                    {% if form.sale_price.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.sale_price.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- STEP 3 -->
+            <div class="card bg-surface border-color p-4 p-md-5 mb-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">3</div>
+                    <h4 class="fw-bold m-0">Availability & Pickup</h4>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.location.label(class="form-label") }}
+                    {% if form.location.errors %}
+                        {{ form.location(class="form-control is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.location.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.location(class="form-control bg-main border-color text-primary", placeholder="E.g., Engineering Building, Room 101") }}
+                    {% endif %}
+                    <div class="form-text text-secondary">Where should the buyer or borrower pick this up?</div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-3 pt-3">
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+                {{ form.submit(class="btn btn-primary btn-lg px-5", value="Publish Resource") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const listingSelect = document.getElementById('listing_type_select');
+    const currencySelect = document.getElementById('currency_select');
+    const rentalContainer = document.getElementById('rental-price-container');
+    const saleContainer = document.getElementById('sale-price-container');
+    const symbolLabels = document.querySelectorAll('.currency-symbol-label');
+
+    const symbolMap = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'INR': '₹',
+        'CAD': 'C$',
+        'AUD': 'A$',
+        'JPY': '¥'
+    };
+
+    function updatePriceVisibility() {
+        const val = listingSelect.value;
+        if (val === 'Rent') {
+            rentalContainer.style.display = 'block';
+            saleContainer.style.display = 'none';
+        } else if (val === 'Sale') {
+            rentalContainer.style.display = 'none';
+            saleContainer.style.display = 'block';
+        } else {
+            rentalContainer.style.display = 'block';
+            saleContainer.style.display = 'block';
+        }
+    }
+
+    function updateCurrencySymbols() {
+        if (!currencySelect) return;
+        const sym = symbolMap[currencySelect.value] || '$';
+        symbolLabels.forEach(el => {
+            el.textContent = sym;
+        });
+    }
+
+    if (listingSelect) {
+        listingSelect.addEventListener('change', updatePriceVisibility);
+        updatePriceVisibility();
+    }
+
+    if (currencySelect) {
+        currencySelect.addEventListener('change', updateCurrencySymbols);
+        updateCurrencySymbols();
+    }
+});
+</script>
+{% endblock %}

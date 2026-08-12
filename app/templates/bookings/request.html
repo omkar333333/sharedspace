@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="dashboard-section p-4 p-md-5">
+            <h2 class="fw-bold mb-4">Request Booking</h2>
+            
+            <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-3">
+                <div class="rounded me-3 cat-gradient-bg d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem;
+                {% if resource.category == 'Tools' %}background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);{% elif resource.category == 'Electronics' %}background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);{% elif resource.category == 'Books' %}background: linear-gradient(135deg, #10b981 0%, #059669 100%);{% elif resource.category == 'Equipment' %}background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);{% else %}background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);{% endif %}
+                ">
+                    {% if resource.category == 'Tools' %}<i class="bi bi-tools"></i>
+                    {% elif resource.category == 'Electronics' %}<i class="bi bi-cpu"></i>
+                    {% elif resource.category == 'Books' %}<i class="bi bi-book"></i>
+                    {% elif resource.category == 'Equipment' %}<i class="bi bi-gear"></i>
+                    {% else %}<i class="bi bi-box"></i>{% endif %}
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-1">{{ resource.title }}</h5>
+                    <p class="mb-0 text-muted small">Owned by {{ resource.owner.username }}</p>
+                </div>
+            </div>
+
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        {{ form.start_date.label(class="form-label fw-semibold") }}
+                        {% if form.start_date.errors %}
+                            {{ form.start_date(class="form-control is-invalid", type="date") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.start_date.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.start_date(class="form-control", type="date") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        {{ form.end_date.label(class="form-label fw-semibold") }}
+                        {% if form.end_date.errors %}
+                            {{ form.end_date(class="form-control is-invalid", type="date") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.end_date.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.end_date(class="form-control", type="date") }}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-5">
+                    {{ form.purpose.label(class="form-label fw-semibold") }}
+                    {% if form.purpose.errors %}
+                        {{ form.purpose(class="form-control is-invalid", rows="4") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.purpose.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.purpose(class="form-control", rows="4", placeholder="Explain why you need this resource and how it will be used...") }}
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-end gap-3 border-top pt-4">
+                    <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-light btn-lg">Cancel</a>
+                    {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

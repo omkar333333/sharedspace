@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- User Header Card -->
+    <div class="card bg-surface border-color p-4 p-md-5 mb-5 shadow-sm">
+        <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+            <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 100px; height: 100px; font-size: 3rem;">
+                {{ user.username[0] | upper }}
+            </div>
+            
+            <div class="flex-grow-1 text-center text-md-start">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-3 mb-2">
+                    <h2 class="fw-bold m-0">{{ user.username }}</h2>
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                        <i class="bi bi-check-circle-fill me-1"></i> Verified Student
+                    </span>
+                </div>
+                
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-start align-items-center gap-4 text-secondary mb-3">
+                    <div>
+                        <i class="bi bi-star-fill text-warning me-1"></i><strong>{{ "%.1f"|format(user.rating or 5.0) }}</strong> Rating
+                    </div>
+                    <div>
+                        <strong class="text-primary">{{ user.followers.count() }}</strong> Followers
+                    </div>
+                    <div>
+                        <strong class="text-primary">{{ user.followed.count() }}</strong> Following
+                    </div>
+                    <div>
+                        <strong class="text-primary">{{ resources|length }}</strong> Listings
+                    </div>
+                </div>
+                
+                <p class="text-secondary small mb-0">Member since {{ user.created_at.strftime('%B %Y') if user.created_at else '2026' }}</p>
+            </div>
+            
+            {% if current_user.is_authenticated and current_user != user %}
+            <div class="d-flex flex-column gap-2" style="min-width: 160px;">
+                {% if is_following %}
+                    <a href="{{ url_for('main.unfollow_user', user_id=user.id) }}" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-person-x-fill me-1"></i> Unfollow
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('main.follow_user', user_id=user.id) }}" class="btn btn-primary w-100">
+                        <i class="bi bi-person-plus-fill me-1"></i> Follow
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('main.messages', recipient_id=user.id) }}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-chat-dots-fill me-1"></i> Direct Message
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- User Listings -->
+    <h3 class="fw-bold mb-4"><i class="bi bi-box-seam text-primary me-2"></i>Listings by {{ user.username }}</h3>
+    <div class="row g-4">
+        {% for resource in resources %}
+        <div class="col-md-6 col-lg-4">
+            <div class="resource-card">
+                <div class="card-img-wrapper">
+                    <img src="{{ resource.image_url or 'https://placehold.co/600x400/1E2A40/F8FAFC?text=No+Image' }}" class="resource-card-img" alt="{{ resource.title }}">
+                    <div class="status-badge">
+                        {% if resource.availability_status == 'Available' %}
+                            <div class="status-dot dot-available"></div> Available
+                        {% elif resource.availability_status == 'Sold' %}
+                            <div class="status-dot dot-maintenance"></div> Sold
+                        {% else %}
+                            <div class="status-dot dot-borrowed"></div> Borrowed
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="cat-tag">{{ resource.category }}</div>
+                        {% if resource.listing_type == 'Sale' %}
+                            <span class="badge bg-success bg-opacity-10 text-success small">For Sale</span>
+                        {% elif resource.listing_type == 'Both' %}
+                            <span class="badge bg-info bg-opacity-10 text-info small">Rent & Sale</span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary small">For Rent</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="resource-title text-truncate">{{ resource.title }}</a>
+                    <p class="resource-desc text-truncate-2">{{ resource.description }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="price-tag">
+                            {% if resource.listing_type == 'Sale' %}
+                                <span class="text-success fw-bold">{{ resource.currency_symbol }}{{ "%.0f"|format(resource.sale_price or 0) }}</span>
+                            {% elif resource.daily_price and resource.daily_price > 0 %}
+                                {{ resource.currency_symbol }}{{ "%.0f"|format(resource.daily_price) }}<span>/day</span>
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-sm btn-primary">View Resource &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox text-secondary" style="font-size: 3rem;"></i>
+            <p class="text-secondary mt-2">This user has not listed any items yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

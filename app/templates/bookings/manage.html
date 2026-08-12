@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <h1 class="fw-bold m-0">Manage Requests</h1>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs mb-4" id="requestTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold" id="purchases-tab" data-bs-toggle="tab" data-bs-target="#purchases-content" type="button" role="tab">
+            <i class="bi bi-cart-check me-2"></i>Purchase Requests 
+            {% if purchase_requests %}
+                <span class="badge bg-primary ms-1">{{ purchase_requests|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="borrow-tab" data-bs-toggle="tab" data-bs-target="#borrow-content" type="button" role="tab">
+            <i class="bi bi-calendar-event me-2"></i>Borrowing Requests 
+            {% if requests %}
+                <span class="badge bg-secondary ms-1">{{ requests|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="requestTabsContent">
+    <!-- Purchase Requests Tab -->
+    <div class="tab-pane fade show active" id="purchases-content" role="tabpanel">
+        <div class="dashboard-section p-0 overflow-hidden shadow-sm">
+            {% if purchase_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Resource</th>
+                            <th>Buyer</th>
+                            <th>Offered Price</th>
+                            <th>Note / Message</th>
+                            <th>Status</th>
+                            <th class="pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in purchase_requests %}
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <div class="fw-bold">{{ req.resource.title }}</div>
+                                <a href="{{ url_for('main.resource_detail', resource_id=req.resource_id) }}" class="small text-decoration-none">View Item</a>
+                            </td>
+                            <td>
+                                {{ req.buyer.username }}
+                                <a href="mailto:{{ req.buyer.email }}" class="d-block small text-decoration-none"><i class="bi bi-envelope"></i> Contact</a>
+                            </td>
+                            <td class="fw-bold text-success">{{ req.resource.currency_symbol }}{{ "%.2f"|format(req.price) }}</td>
+                            <td>
+                                <span class="text-secondary small">{{ req.message or 'No message provided.' }}</span>
+                            </td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending Approval</span>
+                                {% elif req.status == 'approved' %}
+                                    <span class="badge bg-success">Approved / Sold</span>
+                                {% elif req.status == 'rejected' %}
+                                    <span class="badge bg-danger">Declined</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4">
+                                {% if req.status == 'pending' %}
+                                    <div class="btn-group btn-group-sm">
+                                        <form action="{{ url_for('main.update_purchase_status', purchase_id=req.id, status='approved') }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Sell to Buyer</button>
+                                        </form>
+                                        <form action="{{ url_for('main.update_purchase_status', purchase_id=req.id, status='rejected') }}" method="POST" class="d-inline ms-1">
+                                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-lg"></i> Decline</button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+                <h4 class="mt-3">No purchase requests</h4>
+                <p class="text-muted">No one has requested to buy your listed items yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Borrowing Requests Tab -->
+    <div class="tab-pane fade" id="borrow-content" role="tabpanel">
+        <div class="dashboard-section p-0 overflow-hidden shadow-sm">
+            {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Resource</th>
+                            <th>Requested By</th>
+                            <th>Dates & Purpose</th>
+                            <th>Status</th>
+                            <th class="pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <div class="fw-bold">{{ req.resource.title }}</div>
+                                <a href="{{ url_for('main.resource_detail', resource_id=req.resource_id) }}" class="small text-decoration-none">View Details</a>
+                            </td>
+                            <td>
+                                {{ req.borrower.username }}
+                                <a href="mailto:{{ req.borrower.email }}" class="d-block small text-decoration-none"><i class="bi bi-envelope"></i> Contact</a>
+                            </td>
+                            <td>
+                                <div class="text-nowrap fw-medium">{{ req.start_date.strftime('%b %d, %Y') }} - {{ req.end_date.strftime('%b %d, %Y') }}</div>
+                                <small class="text-muted d-block mt-1" style="max-width: 250px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="{{ req.purpose }}">{{ req.purpose }}</small>
+                            </td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif req.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif req.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif req.status == 'completed' %}
+                                    <span class="badge bg-secondary">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4">
+                                {% if req.status == 'pending' %}
+                                    <div class="btn-group btn-group-sm">
+                                        <form action="{{ url_for('main.update_booking_status', booking_id=req.id, status='approved') }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-success" title="Approve"><i class="bi bi-check-lg"></i> Approve</button>
+                                        </form>
+                                        <form action="{{ url_for('main.update_booking_status', booking_id=req.id, status='rejected') }}" method="POST" class="d-inline ms-1">
+                                            <button type="submit" class="btn btn-danger" title="Reject"><i class="bi bi-x-lg"></i> Reject</button>
+                                        </form>
+                                    </div>
+                                {% elif req.status == 'approved' %}
+                                    <form action="{{ url_for('main.update_booking_status', booking_id=req.id, status='completed') }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Mark Completed</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">No actions available</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="mt-3">No borrow requests</h4>
+                <p class="text-muted">No one has requested to borrow your resources yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

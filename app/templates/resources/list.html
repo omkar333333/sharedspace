@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 fw-bold m-0">Browse Resources</h1>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar Filters (Desktop) -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="card bg-surface border-color p-4 sticky-top" style="top: 100px;">
+                <h5 class="fw-bold mb-3">Filters</h5>
+                
+                <form action="{{ url_for('main.list_resources') }}" method="GET">
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small text-uppercase fw-bold">Search</label>
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control bg-main border-color text-primary" placeholder="Keywords..." value="{{ search or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small text-uppercase fw-bold">Listing Type</label>
+                        {% for lt in listing_types %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="listing_type" id="lt-{{ lt }}" value="{{ lt }}" {% if lt == current_listing_type %}checked{% endif %}>
+                            <label class="form-check-label text-primary" for="lt-{{ lt }}">
+                                {% if lt == 'Rent' %}For Rent{% elif lt == 'Sale' %}For Sale{% else %}All Types{% endif %}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small text-uppercase fw-bold">Category</label>
+                        {% for cat in categories %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="category" id="cat-{{ cat }}" value="{{ cat }}" {% if cat == current_category %}checked{% endif %}>
+                            <label class="form-check-label text-primary" for="cat-{{ cat }}">{{ cat }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-2">Apply Filters</button>
+                    <a href="{{ url_for('main.list_resources') }}" class="btn btn-outline-primary w-100">Clear</a>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Mobile Filter Button -->
+        <div class="col-12 d-lg-none mb-3">
+            <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilters">
+                <i class="bi bi-sliders"></i> Show Filters
+            </button>
+            <div class="collapse mt-3" id="mobileFilters">
+                <div class="card bg-surface border-color p-3">
+                    <form action="{{ url_for('main.list_resources') }}" method="GET">
+                        <div class="mb-3">
+                            <input type="text" name="search" class="form-control bg-main border-color" placeholder="Search..." value="{{ search or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <select name="listing_type" class="form-select bg-main border-color">
+                                {% for lt in listing_types %}
+                                    <option value="{{ lt }}" {% if lt == current_listing_type %}selected{% endif %}>
+                                        {% if lt == 'Rent' %}For Rent{% elif lt == 'Sale' %}For Sale{% else %}All Types{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <select name="category" class="form-select bg-main border-color">
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Apply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Grid -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <span class="text-secondary">{{ resources|length }} results found</span>
+                <select class="form-select w-auto bg-surface border-color text-primary">
+                    <option>Recently Added</option>
+                    <option>Most Popular</option>
+                    <option>Lowest Price</option>
+                </select>
+            </div>
+            
+            <div class="row g-4">
+                {% for resource in resources %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="resource-card">
+                        <div class="card-img-wrapper">
+                            <img src="{{ resource.image_url or 'https://placehold.co/600x400/1E2A40/F8FAFC?text=No+Image' }}" class="resource-card-img" alt="{{ resource.title }}">
+                            <div class="status-badge">
+                                {% if resource.availability_status == 'Available' %}
+                                    <div class="status-dot dot-available"></div> Available
+                                {% elif resource.availability_status == 'Sold' %}
+                                    <div class="status-dot dot-maintenance"></div> Sold
+                                {% else %}
+                                    <div class="status-dot dot-borrowed"></div> Borrowed
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="cat-tag">{{ resource.category }}</div>
+                                {% if resource.listing_type == 'Sale' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success small">For Sale</span>
+                                {% elif resource.listing_type == 'Both' %}
+                                    <span class="badge bg-info bg-opacity-10 text-info small">Rent & Sale</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary small">For Rent</span>
+                                {% endif %}
+                            </div>
+                            <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="resource-title text-truncate">{{ resource.title }}</a>
+                            <p class="resource-desc text-truncate-2">{{ resource.description }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="price-tag">
+                                    {% if resource.listing_type == 'Sale' %}
+                                        <span class="text-success fw-bold">{{ resource.currency_symbol }}{{ "%.0f"|format(resource.sale_price or 0) }}</span>
+                                    {% elif resource.daily_price and resource.daily_price > 0 %}
+                                        {{ resource.currency_symbol }}{{ "%.0f"|format(resource.daily_price) }}<span>/day</span>
+                                    {% else %}
+                                        Free
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-sm btn-primary">View &rarr;</a>
+                            </div>
+                            
+                            <div class="owner-info">
+                                <i class="bi bi-person-circle text-muted"></i> {{ resource.owner.username }} &middot; 
+                                <i class="bi bi-star-fill"></i> {{ "%.1f"|format(resource.owner.rating) if resource.owner.rating else "5.0" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-5 my-5">
+                    <i class="bi bi-search text-secondary" style="font-size: 4rem;"></i>
+                    <h3 class="mt-4 fw-bold">No resources found</h3>
+                    <p class="text-secondary">Try changing your filters or search for something different.</p>
+                    <a href="{{ url_for('main.list_resources') }}" class="btn btn-outline-primary mt-3 px-4">Clear Filters</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
