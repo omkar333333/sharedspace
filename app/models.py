@@ -19,6 +19,8 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     rating = db.Column(db.Float, default=5.0)
+    profile_image_url = db.Column(db.String(255), nullable=True)
+    cover_image_url = db.Column(db.String(255), nullable=True)
     
     resources = db.relationship('Resource', backref='owner', lazy=True)
     borrowed = db.relationship('Booking', backref='borrower', lazy=True)

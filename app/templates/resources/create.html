@@ -8,7 +8,7 @@
             <p class="text-secondary">Share your unused resources with fellow students.</p>
         </div>
         
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             
             <!-- STEP 1 -->
@@ -54,7 +54,22 @@
                     {% else %}
                         {{ form.image_url(class="form-control bg-main border-color text-primary", placeholder="https://unsplash.com/photo...") }}
                     {% endif %}
-                    <div class="form-text text-secondary">Provide a direct URL to a high-quality photo of your item.</div>
+                    <div class="form-text text-secondary mb-3">Provide a direct URL to a high-quality photo of your item.</div>
+
+                    <div class="d-flex align-items-center mb-2">
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                        <span class="mx-3 text-secondary small fw-bold">OR</span>
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                    </div>
+
+                    {{ form.image_file.label(class="form-label") }}
+                    {% if form.image_file.errors %}
+                        {{ form.image_file(class="form-control is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.image_file.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.image_file(class="form-control bg-main border-color text-primary") }}
+                    {% endif %}
+                    <div class="form-text text-secondary">Upload a picture directly from your device (JPG, PNG).</div>
                 </div>
                 
                 <div class="mb-4">

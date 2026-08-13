@@ -20,9 +20,13 @@
                     {% for contact in contacts %}
                     <a href="{{ url_for('main.messages', recipient_id=contact.id) }}" class="list-group-item list-group-item-action border-0 py-3 px-3 d-flex align-items-center gap-3 contact-item {% if active_recipient and active_recipient.id == contact.id %}active-chat{% endif %}">
                         <div class="position-relative">
-                            <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 46px; height: 46px; font-size: 1.3rem;">
-                                {{ contact.username[0] | upper }}
-                            </div>
+                            {% if contact.profile_image_url %}
+                                <img src="{{ contact.profile_image_url }}" alt="Avatar" class="rounded-circle border border-2 border-white" style="width: 46px; height: 46px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 46px; height: 46px; font-size: 1.3rem;">
+                                    {{ contact.username[0] | upper }}
+                                </div>
+                            {% endif %}
                             {% if contact.unread_message_count() > 0 %}
                                 <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
                                     <span class="visually-hidden">Unread</span>
@@ -52,9 +56,13 @@
                 <!-- Chat Header -->
                 <div class="p-3 bg-surface border-bottom border-color d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 42px; height: 42px; font-size: 1.2rem;">
-                            {{ active_recipient.username[0] | upper }}
-                        </div>
+                        {% if active_recipient.profile_image_url %}
+                            <img src="{{ active_recipient.profile_image_url }}" alt="Avatar" class="rounded-circle shadow-sm" style="width: 42px; height: 42px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 42px; height: 42px; font-size: 1.2rem;">
+                                {{ active_recipient.username[0] | upper }}
+                            </div>
+                        {% endif %}
                         <div>
                             <h6 class="mb-0 fw-bold">{{ active_recipient.username }}</h6>
                             <small class="text-secondary">
@@ -70,6 +78,9 @@
                         {% else %}
                             <a href="{{ url_for('main.follow_user', user_id=active_recipient.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus-fill me-1"></i> Follow</a>
                         {% endif %}
+                        <form action="{{ url_for('main.delete_messages', recipient_id=active_recipient.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this entire conversation? This cannot be undone.');" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Conversation"><i class="bi bi-trash3-fill"></i></button>
+                        </form>
                     </div>
                 </div>
 

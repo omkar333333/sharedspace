@@ -3,11 +3,12 @@ from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models import User, Resource, Booking, Purchase, Message
-from app.forms import RegistrationForm, LoginForm, ResourceForm, BookingForm, PurchaseForm, MessageForm
+from app.forms import RegistrationForm, LoginForm, ResourceForm, BookingForm, PurchaseForm, MessageForm, UpdateProfileForm
 from datetime import datetime
 import qrcode
 import io
-
+import os
+import secrets
 main = Blueprint('main', __name__)
 
 @main.app_context_processor
@@ -15,6 +16,15 @@ def inject_globals():
     if current_user.is_authenticated:
         return {'unread_count': current_user.unread_message_count()}
     return {'unread_count': 0}
+
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(current_app.root_path, 'static', 'resource_pics', picture_fn)
+    os.makedirs(os.path.dirname(picture_path), exist_ok=True)
+    form_picture.save(picture_path)
+    return url_for('static', filename='resource_pics/' + picture_fn)
 
 
 # --- Authentication Routes ---
@@ -112,12 +122,16 @@ def resource_qrcode(resource_id):
 def create_resource():
     form = ResourceForm()
     if form.validate_on_submit():
+        final_image_url = form.image_url.data
+        if form.image_file.data:
+            final_image_url = save_picture(form.image_file.data)
+            
         resource = Resource(
             title=form.title.data,
             description=form.description.data,
             category=form.category.data,
             location=form.location.data,
-            image_url=form.image_url.data,
+            image_url=final_image_url,
             currency=form.currency.data,
             daily_price=form.daily_price.data,
             listing_type=form.listing_type.data,
@@ -139,11 +153,15 @@ def update_resource(resource_id):
         return redirect(url_for('main.resource_detail', resource_id=resource.id))
     form = ResourceForm()
     if form.validate_on_submit():
+        if form.image_file.data:
+            resource.image_url = save_picture(form.image_file.data)
+        elif form.image_url.data:
+            resource.image_url = form.image_url.data
+            
         resource.title = form.title.data
         resource.description = form.description.data
         resource.category = form.category.data
         resource.location = form.location.data
-        resource.image_url = form.image_url.data
         resource.currency = form.currency.data
         resource.daily_price = form.daily_price.data
         resource.listing_type = form.listing_type.data
@@ -306,7 +324,27 @@ def update_purchase_status(purchase_id, status):
 
 # --- User Profiles & Follow Routes ---
 
+@main.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = UpdateProfileForm(current_user.username, current_user.email)
+    if form.validate_on_submit():
+        if form.profile_picture.data:
+            current_user.profile_image_url = save_picture(form.profile_picture.data)
+        if form.cover_picture.data:
+            current_user.cover_image_url = save_picture(form.cover_picture.data)
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('Your profile has been updated!', 'success')
+        return redirect(url_for('main.user_profile', user_id=current_user.id))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    return render_template('users/edit_profile.html', title='Edit Profile', form=form)
+
 @main.route('/user/<int:user_id>')
+@login_required
 def user_profile(user_id):
     user = User.query.get_or_404(user_id)
     resources = Resource.query.filter_by(owner=user).order_by(Resource.created_at.desc()).all()
@@ -402,6 +440,17 @@ def send_message(recipient_id):
         db.session.commit()
         flash('Message sent!', 'success')
     return redirect(url_for('main.messages', recipient_id=recipient.id, resource_id=resource_id))
+
+@main.route('/messages/<int:recipient_id>/delete', methods=['POST'])
+@login_required
+def delete_messages(recipient_id):
+    Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.recipient_id == recipient_id)) |
+        ((Message.sender_id == recipient_id) & (Message.recipient_id == current_user.id))
+    ).delete()
+    db.session.commit()
+    flash('Conversation has been deleted.', 'success')
+    return redirect(url_for('main.messages'))
 
 # --- Dashboard ---
 
