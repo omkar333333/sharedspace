@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-5 mt-4">
+    <div class="col-12 text-center mb-4">
+        <h1 class="fw-bold">College Equipment Analytics</h1>
+        <p class="text-secondary">Overview of all shared physical resources</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-body text-center">
+                <h6 class="text-secondary fw-bold text-uppercase mb-2">Total Equipment</h6>
+                <div class="display-4 fw-bold text-primary">{{ total_equipment }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-body text-center">
+                <h6 class="text-secondary fw-bold text-uppercase mb-2">In Use Right Now</h6>
+                <div class="display-4 fw-bold text-success">{{ in_use_equipment }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-body text-center">
+                <h6 class="text-secondary fw-bold text-uppercase mb-2">Utilization Rate</h6>
+                <div class="display-4 fw-bold text-info">{{ util_rate }}%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-body text-center">
+                <h6 class="text-secondary fw-bold text-uppercase mb-2">No-Shows</h6>
+                <div class="display-4 fw-bold text-warning">{{ no_shows }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Maintenance Alerts -->
+    <div class="col-md-6 mb-5">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-header bg-transparent border-color pt-4 pb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-tools text-danger me-2"></i>Active Maintenance Incidents</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_incidents %}
+                    <div class="list-group list-group-flush">
+                        {% for incident in recent_incidents %}
+                        <div class="list-group-item bg-transparent border-color px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0">{{ incident.resource.title }}</h6>
+                                <span class="badge bg-danger">Requires Attention</span>
+                            </div>
+                            <p class="mb-1 text-secondary small">{{ incident.issue_description }}</p>
+                            <small class="text-muted">Reported by {{ incident.reported_by.username }} on {{ incident.reported_at.strftime('%b %d, %Y') }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-secondary py-5">
+                        <i class="bi bi-check-circle fs-1 text-success mb-3 d-block"></i>
+                        <p class="mb-0">All equipment is in good condition.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Stats -->
+    <div class="col-md-6 mb-5">
+        <div class="card border-color shadow-sm h-100 bg-surface">
+            <div class="card-header bg-transparent border-color pt-4 pb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>System Usage Stats</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent border-color d-flex justify-content-between align-items-center px-0 py-3">
+                        <span class="fw-bold">Total Bookings Processed</span>
+                        <span class="badge bg-primary rounded-pill fs-6">{{ total_bookings }}</span>
+                    </li>
+                    <li class="list-group-item bg-transparent border-color d-flex justify-content-between align-items-center px-0 py-3">
+                        <span class="fw-bold">Items Available Now</span>
+                        <span class="badge bg-success rounded-pill fs-6">{{ available_equipment }}</span>
+                    </li>
+                    <li class="list-group-item bg-transparent border-color d-flex justify-content-between align-items-center px-0 py-3">
+                        <span class="fw-bold">Items Under Maintenance</span>
+                        <span class="badge bg-danger rounded-pill fs-6">{{ maintenance_equipment }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

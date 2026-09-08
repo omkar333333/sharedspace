@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">How It Works</h1>
+        <p class="lead text-secondary">Borrowing and sharing equipment has never been easier.</p>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-color bg-surface shadow-sm p-4 text-center">
+                <div class="display-4 text-primary mb-3"><i class="bi bi-search"></i></div>
+                <h4 class="fw-bold">1. Find What You Need</h4>
+                <p class="text-secondary">Browse our catalog of equipment, electronics, and tools listed by other students. Use our smart recommendations if your preferred item is busy.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-color bg-surface shadow-sm p-4 text-center">
+                <div class="display-4 text-success mb-3"><i class="bi bi-calendar-check"></i></div>
+                <h4 class="fw-bold">2. Book & Waitlist</h4>
+                <p class="text-secondary">Request a booking for the time you need. If the item is currently in use, you can join the waitlist and get notified automatically when it's free.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-color bg-surface shadow-sm p-4 text-center">
+                <div class="display-4 text-info mb-3"><i class="bi bi-qr-code-scan"></i></div>
+                <h4 class="fw-bold">3. Scan & Use</h4>
+                <p class="text-secondary">When you pick up the equipment, simply scan its QR code to check in. Scan it again when returning it to securely check out and report its condition.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5 pt-5 border-top border-color">
+        <div class="col-lg-8 mx-auto text-center">
+            <h3 class="fw-bold mb-4">Ready to start sharing?</h3>
+            <a href="{{ url_for('main.list_resources') }}" class="btn btn-primary btn-lg px-5">Browse Equipment</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

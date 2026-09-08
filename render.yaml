@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: shared-space-app
+    env: python
+    buildCommand: pip install -r requirements.txt && python init_db.py
+    startCommand: gunicorn run:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shared-space-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+databases:
+  - name: shared-space-db
+    databaseName: shared_space_db
+    user: admin
+    plan: free

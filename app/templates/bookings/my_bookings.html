@@ -43,7 +43,8 @@
                     </td>
                     <td>
                         {{ booking.resource.owner.username }}
-                        <a href="mailto:{{ booking.resource.owner.email }}" class="d-block small text-decoration-none">Contact</a>
+                        <a href="{{ url_for('main.messages', recipient_id=booking.resource.owner.id) }}" class="d-block small text-decoration-none"><i class="bi bi-chat-dots"></i> Message</a>
+                        <a href="mailto:{{ booking.resource.owner.email }}" class="d-block small text-decoration-none text-secondary"><i class="bi bi-envelope"></i> Email</a>
                     </td>
                     <td class="pe-4">
                         <a href="{{ url_for('main.resource_detail', resource_id=booking.resource_id) }}" class="btn btn-sm btn-outline-secondary">View Resource</a>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="fw-bold mb-4"><i class="bi bi-bell-fill text-primary me-2"></i>Notifications</h2>
+            
+            <div class="list-group list-group-flush bg-surface border-color rounded shadow-sm">
+                {% for notification in notifications %}
+                <div class="list-group-item bg-transparent p-4 {% if not notification.is_read %}bg-primary bg-opacity-10{% endif %}">
+                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            {% if 'Waitlist' in notification.message or 'waitlist' in notification.message %}
+                                <i class="bi bi-hourglass-split text-warning fs-5"></i>
+                            {% elif 'approved' in notification.message or 'Approved' in notification.message %}
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            {% elif 'rejected' in notification.message or 'Rejected' in notification.message %}
+                                <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                            {% elif 'returned' in notification.message or 'checked' in notification.message %}
+                                <i class="bi bi-arrow-repeat text-info fs-5"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                            {% endif %}
+                            <h6 class="mb-0 fw-bold">{{ notification.message }}</h6>
+                        </div>
+                        <small class="text-secondary">{{ notification.created_at.strftime('%b %d, %H:%M') }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="bi bi-bell-slash fs-1 text-muted mb-3 d-block"></i>
+                    <p>No notifications yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

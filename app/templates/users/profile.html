@@ -36,6 +36,11 @@
                     
                     <div class="d-flex flex-wrap justify-content-center justify-content-md-start align-items-center gap-4 text-secondary mb-2">
                         <div><i class="bi bi-star-fill text-warning me-1"></i><strong>{{ "%.1f"|format(user.rating or 5.0) }}</strong> Rating</div>
+                        <div>
+                            <span class="badge {% if user.trust_score and user.trust_score >= 90 %}bg-success{% elif user.trust_score and user.trust_score >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %} text-white p-2 px-3 shadow-sm" title="Trust Score reflects reliability of returns">
+                                <i class="bi bi-shield-check me-1"></i> {{ user.trust_score or 100 }} Trust Score
+                            </span>
+                        </div>
                         <div><strong class="text-primary">{{ user.followers.count() }}</strong> Followers</div>
                         <div><strong class="text-primary">{{ user.followed.count() }}</strong> Following</div>
                         <div><strong class="text-primary">{{ resources|length }}</strong> Listings</div>

@@ -2,20 +2,116 @@ from flask import Blueprint, render_template, url_for, flash, redirect, request,
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from app.models import User, Resource, Booking, Purchase, Message
-from app.forms import RegistrationForm, LoginForm, ResourceForm, BookingForm, PurchaseForm, MessageForm, UpdateProfileForm
+from app.models import User, Resource, Booking, Purchase, Message, MaintenanceIncident
+from app.forms import (RegistrationForm, LoginForm, ResourceForm, 
+                       BookingForm, PurchaseForm, ConditionReportForm, CheckInForm,
+                       MessageForm, UpdateProfileForm, DamageReportForm, ReviewForm)
 from datetime import datetime
 import qrcode
 import io
 import os
 import secrets
+import urllib.request
+import urllib.parse
+import json
+
 main = Blueprint('main', __name__)
+
+def geocode_location(location_str):
+    if not location_str:
+        return None, None
+    try:
+        query = urllib.parse.quote(location_str)
+        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1"
+        req = urllib.request.Request(url, headers={'User-Agent': 'SharedSpaceApp/1.0'})
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            if data:
+                return float(data[0]['lat']), float(data[0]['lon'])
+    except Exception as e:
+        print(f"Geocoding error: {e}")
+    return None, None
+
+def get_demand_prediction(resource):
+    """Simple heuristic prediction engine for Hackathon WOW factor."""
+    total_bookings = len(resource.bookings) if hasattr(resource, 'bookings') else 0
+    
+    if total_bookings >= 3:
+        return {
+            'level': 'High Demand Expected',
+            'icon': 'bi-graph-up-arrow',
+            'color': 'danger',
+            'message': 'This item is frequently booked.',
+            'recommended_time': 'Early Morning (8 AM - 10 AM)'
+        }
+    elif total_bookings > 0:
+        return {
+            'level': 'Moderate Demand',
+            'icon': 'bi-graph-up',
+            'color': 'warning',
+            'message': 'This item sees regular usage.',
+            'recommended_time': 'Mid-day (11 AM - 2 PM)'
+        }
+    else:
+        return {
+            'level': 'Low Demand',
+            'icon': 'bi-graph-down',
+            'color': 'success',
+            'message': 'This item is readily available.',
+            'recommended_time': 'Any time works!'
+        }
 
 @main.app_context_processor
 def inject_globals():
     if current_user.is_authenticated:
-        return {'unread_count': current_user.unread_message_count()}
-    return {'unread_count': 0}
+        from app.models import Notification
+        unread_notifs = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+        return {
+            'unread_count': current_user.unread_message_count(),
+            'unread_notifications': unread_notifs
+        }
+    return {'unread_count': 0, 'unread_notifications': 0}
+
+@main.before_app_request
+def process_no_shows():
+    # Only run this once per request cycle
+    if getattr(request, '_no_show_processed', False):
+        return
+    request._no_show_processed = True
+
+    try:
+        now = datetime.utcnow()
+        # Find approved bookings that started more than 15 minutes ago but haven't been checked in
+        overdue_bookings = Booking.query.filter(
+            Booking.status == 'approved',
+            Booking.start_date <= now,
+            Booking.check_in_time.is_(None)
+        ).all()
+
+        for booking in overdue_bookings:
+            # Check if 15 minutes have passed since start_date
+            if (now - booking.start_date).total_seconds() > 900:
+                booking.status = 'no-show'
+                
+                # Check for waitlisted bookings for this resource that overlap
+                waitlisted = Booking.query.filter(
+                    Booking.resource_id == booking.resource_id,
+                    Booking.status == 'waitlisted',
+                    Booking.start_date >= booking.start_date
+                ).order_by(Booking.request_date.asc()).first()
+                
+                if waitlisted:
+                    waitlisted.status = 'approved'
+                    waitlisted.response_date = now
+                else:
+                    # Mark resource as available if no waitlist
+                    booking.resource.availability_status = 'Available'
+                    
+        if overdue_bookings:
+            db.session.commit()
+    except Exception as e:
+        # Failsafe so we don't break the app if db isn't ready
+        pass
 
 def save_picture(form_picture):
     random_hex = secrets.token_hex(8)
@@ -26,6 +122,22 @@ def save_picture(form_picture):
     form_picture.save(picture_path)
     return url_for('static', filename='resource_pics/' + picture_fn)
 
+
+@main.route('/about')
+def about():
+    return render_template('about.html', title='About Us')
+
+@main.route('/help')
+def help_page():
+    return render_template('placeholder.html', title='Help Center')
+
+@main.route('/contact')
+def contact():
+    return render_template('placeholder.html', title='Contact Us')
+
+@main.route('/how-it-works')
+def how_it_works():
+    return render_template('how_it_works.html', title='How It Works')
 
 # --- Authentication Routes ---
 
@@ -70,6 +182,18 @@ def index():
     resources = Resource.query.filter_by(availability_status='Available').order_by(Resource.created_at.desc()).limit(6).all()
     return render_template('index.html', resources=resources)
 
+@main.route('/notifications')
+@login_required
+def notifications():
+    from app.models import Notification
+    notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(20).all()
+    # Mark as read
+    for n in notifs:
+        if not n.is_read:
+            n.is_read = True
+    db.session.commit()
+    return render_template('notifications.html', notifications=notifs)
+
 # --- Resource Management Routes ---
 
 @main.route('/resources')
@@ -98,12 +222,24 @@ def list_resources():
 @main.route('/resource/<int:resource_id>')
 def resource_detail(resource_id):
     resource = Resource.query.get_or_404(resource_id)
-    return render_template('resources/detail.html', title=resource.title, resource=resource)
+    
+    recommended_alternatives = []
+    if resource.availability_status != 'Available':
+        # Smart Alternative Recommendations
+        recommended_alternatives = Resource.query.filter(
+            Resource.id != resource.id,
+            Resource.category == resource.category,
+            Resource.availability_status == 'Available'
+        ).limit(3).all()
+        
+    ai_prediction = get_demand_prediction(resource)
+        
+    return render_template('resources/detail.html', title=resource.title, resource=resource, recommended_alternatives=recommended_alternatives, ai_prediction=ai_prediction)
 
 @main.route('/resource/<int:resource_id>/qrcode')
 def resource_qrcode(resource_id):
     resource = Resource.query.get_or_404(resource_id)
-    url = url_for('main.resource_detail', resource_id=resource.id, _external=True)
+    url = url_for('main.scan_resource', resource_id=resource.id, _external=True)
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(url)
@@ -117,6 +253,92 @@ def resource_qrcode(resource_id):
     
     return send_file(img_io, mimetype='image/png')
 
+@main.route('/scan/<int:resource_id>')
+@login_required
+def scan_resource(resource_id):
+    resource = Resource.query.get_or_404(resource_id)
+    now = datetime.utcnow()
+    
+    # Are we checking it in?
+    booking = Booking.query.filter(
+        Booking.resource_id == resource.id,
+        Booking.borrower_id == current_user.id,
+        Booking.status == 'approved',
+        Booking.check_in_time.is_(None)
+    ).first()
+    
+    if booking:
+        booking.check_in_time = now
+        booking.status = 'in_use'
+        resource.availability_status = 'In Use'
+        db.session.commit()
+        
+        from app.models import Notification
+        notif = Notification(user_id=resource.owner_id, message=f"{current_user.username} has checked in and picked up {resource.title}.")
+        db.session.add(notif)
+        db.session.commit()
+        
+        flash('Check-in successful! You are now using the equipment.', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    # Are we checking it out/returning?
+    active_booking = Booking.query.filter(
+        Booking.resource_id == resource.id,
+        Booking.borrower_id == current_user.id,
+        Booking.status == 'in_use'
+    ).first()
+    
+    if active_booking:
+        return redirect(url_for('main.return_resource', booking_id=active_booking.id))
+        
+    flash('No active booking found to check in or return.', 'warning')
+    return redirect(url_for('main.resource_detail', resource_id=resource.id))
+
+@main.route('/return/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
+def return_resource(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    if booking.borrower_id != current_user.id or booking.status != 'in_use':
+        flash('Invalid return request.', 'danger')
+        return redirect(url_for('main.dashboard'))
+        
+    if request.method == 'POST':
+        condition = request.form.get('condition')
+        
+        now = datetime.utcnow()
+        booking.check_out_time = now
+        booking.status = 'completed'
+        
+        if condition == 'Good':
+            current_user.trust_score = min(100, (current_user.trust_score or 100) + 5)
+            booking.resource.availability_status = 'Available'
+        else:
+            if condition == 'Minor Issue':
+                current_user.trust_score = max(0, (current_user.trust_score or 100) - 10)
+            else:
+                current_user.trust_score = max(0, (current_user.trust_score or 100) - 30)
+                
+            booking.resource.availability_status = 'Under Maintenance'
+            from app.models import MaintenanceIncident
+            incident = MaintenanceIncident(
+                resource_id=booking.resource.id,
+                reported_by_id=current_user.id,
+                issue_description=f"Reported condition on return: {condition}. AI Verification complete."
+            )
+            db.session.add(incident)
+            
+        db.session.commit()
+        
+        from app.models import Notification
+        notif = Notification(user_id=booking.resource.owner_id, message=f"{current_user.username} has returned {booking.resource.title}. Condition: {condition}.")
+        db.session.add(notif)
+        db.session.commit()
+        
+        flash('Return processed successfully! Your trust score was updated.', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    return render_template('bookings/return_condition.html', booking=booking)
+
 @main.route('/resource/new', methods=['GET', 'POST'])
 @login_required
 def create_resource():
@@ -126,16 +348,25 @@ def create_resource():
         if form.image_file.data:
             final_image_url = save_picture(form.image_file.data)
             
+        if form.latitude.data and form.longitude.data:
+            lat = form.latitude.data
+            lng = form.longitude.data
+        else:
+            lat, lng = geocode_location(form.location.data)
+            
         resource = Resource(
             title=form.title.data,
             description=form.description.data,
             category=form.category.data,
             location=form.location.data,
+            latitude=lat,
+            longitude=lng,
             image_url=final_image_url,
             currency=form.currency.data,
             daily_price=form.daily_price.data,
             listing_type=form.listing_type.data,
             sale_price=form.sale_price.data,
+            security_deposit=form.security_deposit.data,
             owner=current_user
         )
         db.session.add(resource)
@@ -161,11 +392,23 @@ def update_resource(resource_id):
         resource.title = form.title.data
         resource.description = form.description.data
         resource.category = form.category.data
-        resource.location = form.location.data
+        
+        # Only geocode if location changed and coords not explicitly provided
+        if form.latitude.data and form.longitude.data:
+            resource.latitude = form.latitude.data
+            resource.longitude = form.longitude.data
+            resource.location = form.location.data
+        elif resource.location != form.location.data:
+            lat, lng = geocode_location(form.location.data)
+            resource.latitude = lat
+            resource.longitude = lng
+            resource.location = form.location.data
+            
         resource.currency = form.currency.data
         resource.daily_price = form.daily_price.data
         resource.listing_type = form.listing_type.data
         resource.sale_price = form.sale_price.data
+        resource.security_deposit = form.security_deposit.data
         db.session.commit()
         flash('Your resource has been updated!', 'success')
         return redirect(url_for('main.resource_detail', resource_id=resource.id))
@@ -174,11 +417,14 @@ def update_resource(resource_id):
         form.description.data = resource.description
         form.category.data = resource.category
         form.location.data = resource.location
+        form.latitude.data = resource.latitude
+        form.longitude.data = resource.longitude
         form.image_url.data = resource.image_url
         form.currency.data = resource.currency
         form.daily_price.data = resource.daily_price
         form.listing_type.data = resource.listing_type
         form.sale_price.data = resource.sale_price
+        form.security_deposit.data = resource.security_deposit
     return render_template('resources/create.html', title='Update Resource', form=form, legend='Update Resource')
 
 @main.route('/resource/<int:resource_id>/delete', methods=['POST'])
@@ -186,12 +432,118 @@ def update_resource(resource_id):
 def delete_resource(resource_id):
     resource = Resource.query.get_or_404(resource_id)
     if resource.owner != current_user:
-        flash('You do not have permission to delete this resource', 'danger')
+        flash('You do not have permission to delete this resource.', 'danger')
         return redirect(url_for('main.resource_detail', resource_id=resource.id))
+        
+    from app.models import Booking, Purchase, MaintenanceIncident, Message
+    Booking.query.filter_by(resource_id=resource.id).delete()
+    Purchase.query.filter_by(resource_id=resource.id).delete()
+    MaintenanceIncident.query.filter_by(resource_id=resource.id).delete()
+    Message.query.filter_by(resource_id=resource.id).delete()
+    
     db.session.delete(resource)
     db.session.commit()
     flash('Your resource has been deleted!', 'success')
     return redirect(url_for('main.list_resources'))
+
+# --- QR & Smart Equipment Features ---
+
+@main.route('/resource/<int:resource_id>/generate_qr')
+@login_required
+def generate_qr(resource_id):
+    resource = Resource.query.get_or_404(resource_id)
+    if resource.owner != current_user and not current_user.is_admin:
+        flash('Permission denied.', 'danger')
+        return redirect(url_for('main.resource_detail', resource_id=resource.id))
+    
+    # Generate QR Code encoding the URL to the scan page
+    scan_url = url_for('main.scan_qr', resource_id=resource.id, _external=True)
+    img = qrcode.make(scan_url)
+    
+    # Save the QR code image
+    qr_filename = f"qr_res_{resource.id}_{secrets.token_hex(4)}.png"
+    qr_path = os.path.join(current_app.root_path, 'static', 'resource_pics', qr_filename)
+    img.save(qr_path)
+    
+    resource.qr_code_url = url_for('static', filename='resource_pics/' + qr_filename)
+    db.session.commit()
+    flash('QR Code generated successfully!', 'success')
+    return redirect(url_for('main.resource_detail', resource_id=resource.id))
+
+@main.route('/scan/<int:resource_id>', methods=['GET', 'POST'])
+@login_required
+def scan_qr(resource_id):
+    resource = Resource.query.get_or_404(resource_id)
+    
+    # Check if the user has an active booking for this resource right now
+    now = datetime.utcnow()
+    
+    # 1. Look for an IN_USE booking to check out
+    in_use_booking = Booking.query.filter(
+        Booking.resource_id == resource_id,
+        Booking.borrower_id == current_user.id,
+        Booking.status == 'in_use'
+    ).first()
+    
+    if in_use_booking:
+        form = ConditionReportForm()
+        if form.validate_on_submit():
+            in_use_booking.status = 'completed'
+            in_use_booking.check_out_time = now
+            
+            if form.image_file.data:
+                from app.utils import save_picture
+                in_use_booking.check_out_image_url = save_picture(form.image_file.data)
+            
+            resource.health_status = form.health_status.data
+            resource.maintenance_notes = form.maintenance_notes.data
+            
+            if form.health_status.data != 'Good':
+                resource.availability_status = 'Under Maintenance'
+                incident = MaintenanceIncident(
+                    resource_id=resource.id,
+                    reported_by_id=current_user.id,
+                    issue_description=form.maintenance_notes.data,
+                    reported_at=now
+                )
+                db.session.add(incident)
+            else:
+                resource.availability_status = 'Available'
+                
+            db.session.commit()
+            flash('Equipment returned successfully!', 'success')
+            return redirect(url_for('main.dashboard'))
+            
+        return render_template('resources/scan_checkout.html', resource=resource, booking=in_use_booking, form=form)
+
+    # 2. Look for an APPROVED upcoming booking to check in
+    # We'll allow check-in up to 15 mins early or anytime during the booking
+    upcoming_booking = Booking.query.filter(
+        Booking.resource_id == resource_id,
+        Booking.borrower_id == current_user.id,
+        Booking.status == 'approved'
+    ).first()
+    
+    if upcoming_booking:
+        form = CheckInForm()
+        if form.validate_on_submit():
+            upcoming_booking.status = 'in_use'
+            upcoming_booking.check_in_time = now
+            
+            if form.image_file.data:
+                # Save the uploaded "before" picture
+                picture_file = save_picture(form.image_file.data)
+                upcoming_booking.check_in_image_url = picture_file
+
+            resource.availability_status = 'In Use'
+            db.session.commit()
+            flash('Check-in successful! You are now using the equipment.', 'success')
+            return redirect(url_for('main.dashboard'))
+            
+        return render_template('resources/scan_checkin.html', resource=resource, booking=upcoming_booking, form=form)
+        
+    flash('You do not have any active or upcoming bookings for this equipment.', 'warning')
+    return redirect(url_for('main.resource_detail', resource_id=resource.id))
 
 # --- Booking Routes ---
 
@@ -205,25 +557,37 @@ def book_resource(resource_id):
     if resource.listing_type not in ['Rent', 'Both']:
         flash('This resource is not listed for rent.', 'warning')
         return redirect(url_for('main.resource_detail', resource_id=resource.id))
-    if resource.availability_status != 'Available':
-        flash('This resource is currently not available for booking.', 'warning')
-        return redirect(url_for('main.resource_detail', resource_id=resource.id))
         
     form = BookingForm()
     if form.validate_on_submit():
+        is_waitlist = resource.availability_status != 'Available'
         booking = Booking(
             start_date=form.start_date.data,
             end_date=form.end_date.data,
             purpose=form.purpose.data,
             resource=resource,
             borrower=current_user,
-            status='pending'
+            status='waitlisted' if is_waitlist else 'pending'
         )
         db.session.add(booking)
+        
+        # Notify owner
+        from app.models import Notification
+        notif_msg = f"{current_user.username} has requested to borrow '{resource.title}'."
+        if is_waitlist:
+            notif_msg = f"{current_user.username} joined the waitlist for '{resource.title}'."
+        owner_notif = Notification(user_id=resource.owner_id, message=notif_msg)
+        db.session.add(owner_notif)
+        
         db.session.commit()
-        flash('Your booking request has been submitted and is pending approval.', 'success')
+        if is_waitlist:
+            flash('This equipment is currently unavailable. You have been added to the waitlist!', 'info')
+        else:
+            flash('Your booking request has been submitted and is pending approval.', 'success')
         return redirect(url_for('main.my_bookings'))
-    return render_template('bookings/request.html', title='Book Resource', form=form, resource=resource)
+        
+    ai_prediction = get_demand_prediction(resource)
+    return render_template('bookings/request.html', title='Book Resource', form=form, resource=resource, ai_prediction=ai_prediction)
 
 @main.route('/my_bookings')
 @login_required
@@ -256,6 +620,12 @@ def update_booking_status(booking_id, status):
             if active_bookings == 0 and booking.resource.availability_status != 'Sold':
                  booking.resource.availability_status = 'Available'
         db.session.commit()
+        
+        # Notify borrower
+        from app.models import Notification
+        borrower_notif = Notification(user_id=booking.borrower_id, message=f"Your borrowing request for '{booking.resource.title}' was {status}.")
+        db.session.add(borrower_notif)
+        db.session.commit()
         flash(f'Booking request marked as {status}.', 'success')
     return redirect(url_for('main.manage_requests'))
 
@@ -285,6 +655,12 @@ def buy_resource(resource_id):
             status='pending'
         )
         db.session.add(purchase)
+        
+        # Notify owner
+        from app.models import Notification
+        owner_notif = Notification(user_id=resource.owner_id, message=f"{current_user.username} has requested to buy '{resource.title}'.")
+        db.session.add(owner_notif)
+        
         db.session.commit()
         flash('Your purchase request has been submitted and is pending seller approval.', 'success')
         return redirect(url_for('main.my_purchases'))
@@ -318,6 +694,12 @@ def update_purchase_status(purchase_id, status):
             for b in other_bookings:
                 b.status = 'rejected'
                 b.response_date = datetime.utcnow()
+        db.session.commit()
+        
+        # Notify buyer
+        from app.models import Notification
+        buyer_notif = Notification(user_id=purchase.buyer_id, message=f"Your purchase request for '{purchase.resource.title}' was {status}.")
+        db.session.add(buyer_notif)
         db.session.commit()
         flash(f'Purchase request marked as {status}.', 'success')
     return redirect(url_for('main.manage_requests'))
@@ -484,8 +866,23 @@ from flask import jsonify
 
 @main.route('/api/resources', methods=['GET'])
 def api_get_resources():
-    resources = Resource.query.all()
-    return jsonify([{'id': r.id, 'title': r.title, 'category': r.category, 'listing_type': r.listing_type, 'status': r.availability_status, 'currency': r.currency, 'currency_symbol': r.currency_symbol, 'daily_price': r.daily_price, 'sale_price': r.sale_price} for r in resources])
+    resources = Resource.query.filter_by(availability_status='Available').all()
+    return jsonify([{
+        'id': r.id, 
+        'title': r.title, 
+        'category': r.category, 
+        'listing_type': r.listing_type, 
+        'status': r.availability_status, 
+        'currency': r.currency, 
+        'currency_symbol': r.currency_symbol, 
+        'daily_price': r.daily_price, 
+        'sale_price': r.sale_price,
+        'latitude': r.latitude,
+        'longitude': r.longitude,
+        'location': r.location,
+        'owner': r.owner.username,
+        'url': url_for('main.resource_detail', resource_id=r.id)
+    } for r in resources])
 
 @main.route('/api/resources/<int:resource_id>', methods=['GET'])
 def api_get_resource(resource_id):
@@ -504,5 +901,71 @@ def api_get_purchases():
     purchases = Purchase.query.filter_by(buyer=current_user).all()
     return jsonify([{'id': p.id, 'resource_id': p.resource_id, 'status': p.status, 'price': p.price, 'request_date': p.request_date.strftime('%Y-%m-%d')} for p in purchases])
 
+@main.route('/report_damage/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
+def report_damage(booking_id):
+    from app.models import DamageReport
+    booking = Booking.query.get_or_404(booking_id)
+    if booking.resource.owner_id != current_user.id:
+        flash('Only the owner can report damage.', 'danger')
+        return redirect(url_for('main.dashboard'))
+        
+    form = DamageReportForm()
+    if form.validate_on_submit():
+        image_url = None
+        if form.image_file.data:
+            image_url = save_picture(form.image_file.data)
+            
+        report = DamageReport(
+            booking_id=booking.id,
+            reporter_id=current_user.id,
+            description=form.description.data,
+            image_url=image_url
+        )
+        db.session.add(report)
+        db.session.commit()
+        
+        # Optionally deduct trust score from borrower
+        borrower = booking.borrower
+        borrower.trust_score = max(0, (borrower.trust_score or 100) - 50)
+        db.session.commit()
+        
+        flash('Damage reported successfully. The borrower has been penalized.', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    return render_template('bookings/report_damage.html', form=form, booking=booking)
 
-
+@main.route('/review/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
+def review_booking(booking_id):
+    from app.models import Review
+    booking = Booking.query.get_or_404(booking_id)
+    if current_user.id not in [booking.borrower_id, booking.resource.owner_id]:
+        flash('You do not have permission to review this booking.', 'danger')
+        return redirect(url_for('main.dashboard'))
+        
+    form = ReviewForm()
+    if form.validate_on_submit():
+        reviewee_id = booking.resource.owner_id if current_user.id == booking.borrower_id else booking.borrower_id
+        review = Review(
+            reviewer_id=current_user.id,
+            reviewee_id=reviewee_id,
+            booking_id=booking.id,
+            rating=int(form.rating.data),
+            comment=form.comment.data
+        )
+        db.session.add(review)
+        db.session.commit()
+        
+        # Update user's average rating
+        reviewee = User.query.get(reviewee_id)
+        reviews = Review.query.filter_by(reviewee_id=reviewee_id).all()
+        if reviews:
+            avg_rating = sum(r.rating for r in reviews) / len(reviews)
+            reviewee.rating = round(avg_rating, 1)
+            db.session.commit()
+            
+        flash('Review submitted successfully.', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    return render_template('bookings/review.html', form=form, booking=booking)

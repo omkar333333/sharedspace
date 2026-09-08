@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="bento-box shadow-sm" style="border-top: 5px solid var(--danger);">
+                <div class="bento-box-header border-bottom pb-3 mb-4">
+                    <h2 class="fw-bold m-0"><i class="bi bi-exclamation-triangle text-danger me-2"></i> Report Damage</h2>
+                    <p class="text-secondary mt-2 mb-0">Report damage for <strong>{{ booking.resource.title }}</strong> rented to <strong>{{ booking.borrower.username }}</strong>.</p>
+                </div>
+
+                <form method="POST" action="" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.description.label(class="form-label fw-bold") }}
+                        {% if form.description.errors %}
+                            {{ form.description(class="form-control is-invalid", rows=5) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.description(class="form-control", rows=5, placeholder="Please describe exactly what was damaged, missing, or broken...") }}
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.image_file.label(class="form-label fw-bold") }}
+                        {{ form.image_file(class="form-control") }}
+                        <div class="form-text text-muted">Upload a photo clearly showing the damage (optional, but highly recommended for dispute resolution).</div>
+                        {% if form.image_file.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.image_file.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-shield-exclamation me-2"></i> Submitting this report will penalize the borrower's trust score and flag the transaction for our resolution team. 
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.manage_requests') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        {{ form.submit(class="btn btn-danger px-4 fw-bold") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

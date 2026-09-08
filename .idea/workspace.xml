@@ -6,6 +6,24 @@
   <component name="ChangeListManager">
     <list default="true" id="cbad89f4-d012-4193-8fec-0d108d807f05" name="Changes" comment="">
       <changelist_data name="omkar333333" email="omkar333333@users.noreply.github.com" automatic="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/forms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/bookings/manage.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/bookings/manage.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/bookings/my_bookings.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/bookings/my_bookings.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/bookings/request.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/bookings/request.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/dashboard.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/resources/create.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/resources/create.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/resources/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/resources/detail.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/resources/list.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/resources/list.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/users/profile.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/users/profile.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,7 +42,7 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/omkar333333/sasta_olx.git&quot;,
+    &quot;url&quot;: &quot;git@github.com:omkar333333/sasta_olx.git&quot;,
     &quot;accountId&quot;: &quot;ebfcbba8-0620-4ccf-adcb-8bcb1b969275&quot;
   }
 }</component>
@@ -37,25 +55,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "C:/Users/omkar/Downloads/pero",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/omkar/Downloads/pero&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="folder" type="PythonConfigurationType" factoryName="Python">
       <module name="folder" />
@@ -99,6 +117,8 @@
       <updated>1786522339400</updated>
       <workItem from="1786522340416" duration="2457000" />
       <workItem from="1786529379520" duration="304000" />
+      <workItem from="1786540593709" duration="337000" />
+      <workItem from="1786705397544" duration="91000" />
     </task>
     <servers />
   </component>

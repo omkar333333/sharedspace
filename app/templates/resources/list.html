@@ -85,14 +85,31 @@
         <div class="col-lg-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="text-secondary">{{ resources|length }} results found</span>
-                <select class="form-select w-auto bg-surface border-color text-primary">
-                    <option>Recently Added</option>
-                    <option>Most Popular</option>
-                    <option>Lowest Price</option>
-                </select>
+                <div class="d-flex gap-2">
+                    <button id="toggleMapView" class="btn btn-outline-primary"><i class="bi bi-map"></i> Map View</button>
+                    <select class="form-select w-auto bg-surface border-color text-primary">
+                        <option>Recently Added</option>
+                        <option>Most Popular</option>
+                        <option>Lowest Price</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="row g-4">
+            <div id="mapViewContainer" class="d-none mb-4" style="height: 500px; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--bs-border-color);">
+                <div id="resourcesMap" style="height: 100%; width: 100%;"></div>
+            </div>
+            
+            <div id="skeletonContainer" class="row g-4">
+                <!-- 6 skeleton cards -->
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+                <div class="col-md-6 col-xl-4"><div class="resource-card skeleton" style="height: 350px;"></div></div>
+            </div>
+            
+            <div class="row g-4 d-none" id="gridViewContainer">
                 {% for resource in resources %}
                 <div class="col-md-6 col-xl-4">
                     <div class="resource-card">
@@ -154,4 +171,92 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleMapView');
+    const mapContainer = document.getElementById('mapViewContainer');
+    const gridContainer = document.getElementById('gridViewContainer');
+    const skeletonContainer = document.getElementById('skeletonContainer');
+    let mapInitialized = false;
+    let map;
+    
+    // Skeleton loader simulation
+    setTimeout(() => {
+        if (skeletonContainer) {
+            skeletonContainer.classList.add('d-none');
+            // Only show grid if map isn't active
+            if (mapContainer.classList.contains('d-none')) {
+                gridContainer.classList.remove('d-none');
+            }
+        }
+    }, 600);
+
+    // We will generate pseudo-random coordinates near a central campus location for demo purposes.
+    // E.g., MIT Campus center: 42.3601, -71.0942
+    const campusCenter = [42.3601, -71.0942];
+    
+    // Resource Data for map pins
+    const resourceData = [
+        {% for resource in resources %}
+        {
+            id: {{ resource.id }},
+            title: "{{ resource.title|replace('"', '\\"') }}",
+            category: "{{ resource.category }}",
+            location: "{{ resource.location|replace('"', '\\"') }}",
+            owner: "{{ resource.owner.username|replace('"', '\\"') }}",
+            url: "{{ url_for('main.resource_detail', resource_id=resource.id) }}",
+            // Use real coordinates if available, otherwise fallback to jitter around center
+            lat: {% if resource.latitude %}{{ resource.latitude }}{% else %}campusCenter[0] + (Math.random() - 0.5) * 0.01{% endif %},
+            lng: {% if resource.longitude %}{{ resource.longitude }}{% else %}campusCenter[1] + (Math.random() - 0.5) * 0.01{% endif %}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    toggleBtn.addEventListener('click', function() {
+        if (mapContainer.classList.contains('d-none')) {
+            // Show map
+            mapContainer.classList.remove('d-none');
+            gridContainer.classList.add('d-none');
+            toggleBtn.innerHTML = '<i class="bi bi-grid-fill"></i> Grid View';
+            
+            if (!mapInitialized) {
+                map = L.map('resourcesMap').setView(campusCenter, 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Add markers and calculate bounds
+                const bounds = [];
+                resourceData.forEach(item => {
+                    const marker = L.marker([item.lat, item.lng]).addTo(map);
+                    bounds.push([item.lat, item.lng]);
+                    
+                    marker.bindPopup(`
+                        <div class="p-1">
+                            <strong class="d-block mb-1">${item.title}</strong>
+                            <div class="text-secondary small mb-2">By ${item.owner}</div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-2">${item.category}</span>
+                            <br>
+                            <small class="text-secondary d-block mb-2"><i class="bi bi-geo-alt"></i> ${item.location}</small>
+                            <a href="${item.url}" class="btn btn-sm btn-primary w-100 mt-1">View</a>
+                        </div>
+                    `);
+                });
+                
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, { padding: [30, 30] });
+                }
+                
+                mapInitialized = true;
+            }
+        } else {
+            // Show grid
+            mapContainer.classList.add('d-none');
+            gridContainer.classList.remove('d-none');
+            toggleBtn.innerHTML = '<i class="bi bi-map"></i> Map View';
+        }
+    });
+});
+</script>
 {% endblock %}

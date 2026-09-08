@@ -67,6 +67,8 @@ class ResourceForm(FlaskForm):
         ('Both', 'For Rent & Sale')
     ], validators=[DataRequired()], default='Rent')
     location = StringField('Location', validators=[DataRequired(), Length(max=100)])
+    latitude = FloatField('Latitude (Optional, e.g. 42.3601)', validators=[Optional()])
+    longitude = FloatField('Longitude (Optional, e.g. -71.0942)', validators=[Optional()])
     image_url = StringField('Image URL', validators=[Optional(), Length(max=255)])
     image_file = FileField('Upload Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     currency = SelectField('Currency', choices=[
@@ -80,20 +82,50 @@ class ResourceForm(FlaskForm):
     ], validators=[DataRequired()], default='USD')
     daily_price = FloatField('Daily Rental Price (Optional)', validators=[Optional()])
     sale_price = FloatField('Sale Price (Optional)', validators=[Optional()])
+    security_deposit = FloatField('Security Deposit (Optional)', validators=[Optional()])
     submit = SubmitField('List Resource')
 
 class BookingForm(FlaskForm):
     start_date = DateField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
     end_date = DateField('End Date', format='%Y-%m-%d', validators=[DataRequired()])
     purpose = TextAreaField('Purpose/Reason for borrowing', validators=[DataRequired()])
+    agree_to_terms = BooleanField('I agree to pay the full replacement cost if I damage or lose this item.', validators=[DataRequired()])
     submit = SubmitField('Request Booking')
 
 class PurchaseForm(FlaskForm):
-    message = TextAreaField('Note/Message for Seller (Optional)', validators=[Optional()])
-    submit = SubmitField('Confirm Purchase Request')
+    message = TextAreaField('Message to Owner (Optional)', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Request to Purchase')
+
+class ConditionReportForm(FlaskForm):
+    health_status = SelectField('Equipment Condition', choices=[
+        ('Good', 'Good - No issues'),
+        ('Minor Issue', 'Minor Issue - Usable but needs attention'),
+        ('Damaged', 'Damaged - Unusable or broken')
+    ], validators=[DataRequired()])
+    maintenance_notes = TextAreaField('Describe the issue (if any)', validators=[Optional(), Length(max=500)])
+    image_file = FileField('Upload Condition Photo (Optional but recommended)', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg'])])
+    submit = SubmitField('Complete Return')
+
+class CheckInForm(FlaskForm):
+    image_file = FileField('Upload "Before" Photo (Condition at Check-in)', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg'])])
+    submit = SubmitField('Complete Check-in')
 
 class MessageForm(FlaskForm):
     body = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send Message')
 
+class DamageReportForm(FlaskForm):
+    description = TextAreaField('Describe the damage in detail', validators=[DataRequired(), Length(min=10, max=1000)])
+    image_file = FileField('Upload Evidence (Photo)', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg'])])
+    submit = SubmitField('Submit Damage Report')
 
+class ReviewForm(FlaskForm):
+    rating = SelectField('Rating', choices=[
+        ('5', '5 Stars - Excellent'),
+        ('4', '4 Stars - Good'),
+        ('3', '3 Stars - Okay'),
+        ('2', '2 Stars - Poor'),
+        ('1', '1 Star - Terrible')
+    ], validators=[DataRequired()])
+    comment = TextAreaField('Review Comments (Optional)', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Submit Review')

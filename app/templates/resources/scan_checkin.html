@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-6">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Pick Up Equipment</h1>
+            <p class="text-secondary">You are picking up {{ resource.title }}. Please take a photo of its condition before using it.</p>
+        </div>
+        
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="card bg-surface border-color p-4 p-md-5 mb-4 shadow-sm">
+                
+                <div class="mb-4">
+                    {{ form.image_file.label(class="form-label fw-bold") }}
+                    <div class="small text-secondary mb-2">Upload a "before" photo to protect yourself from damage claims.</div>
+                    {% if form.image_file.errors %}
+                        {{ form.image_file(class="form-control form-control-lg bg-main text-primary border-color is-invalid") }}
+                        <div class="invalid-feedback">{% for error in form.image_file.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.image_file(class="form-control form-control-lg bg-main text-primary border-color") }}
+                    {% endif %}
+                </div>
+                
+                <div class="alert alert-info border-color bg-surface d-flex align-items-center mb-0 mt-4">
+                    <i class="bi bi-shield-check fs-4 text-primary me-3"></i>
+                    <div class="small">
+                        By checking in, you agree that you are taking possession of the item. This marks the start of your rental period.
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary btn-lg fw-bold") }}
+                <a href="{{ url_for('main.resource_detail', resource_id=resource.id) }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

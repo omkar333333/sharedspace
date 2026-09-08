@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-4 mb-5">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-sm border-color bg-surface">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary-brand rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                        <i class="bi bi-qr-code-scan"></i>
+                    </div>
+                    <h2 class="fw-bold">Return Equipment</h2>
+                    <p class="text-secondary">You are checking out <strong>{{ booking.resource.title }}</strong></p>
+                </div>
+
+                <!-- AI Verification Upload Form -->
+                <form id="returnForm" method="POST" action="{{ url_for('main.return_resource', booking_id=booking.id) }}">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">1. AI Condition Verification <i class="bi bi-robot text-primary ms-2"></i></h5>
+                    <p class="text-secondary small mb-3">Please take a clear photo of the equipment. Our AI model will verify its condition to instantly update your Trust Score.</p>
+                    
+                    <div class="mb-4">
+                        <label for="aiImage" class="form-label fw-bold">Upload Photo</label>
+                        <input class="form-control" type="file" id="aiImage" accept="image/*" required>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 mt-5 border-bottom pb-2">2. Self-Report Condition</h5>
+                    <div class="mb-4">
+                        <div class="form-check custom-radio mb-3 p-3 border rounded">
+                            <input class="form-check-input mt-1 ms-1" type="radio" name="condition" id="condGood" value="Good" required>
+                            <label class="form-check-label ms-2 d-block" for="condGood">
+                                <span class="fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i> Good Condition</span>
+                                <span class="d-block text-secondary small mt-1">No new damage. Works perfectly. (+5 Trust Score)</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio mb-3 p-3 border rounded">
+                            <input class="form-check-input mt-1 ms-1" type="radio" name="condition" id="condMinor" value="Minor Issue">
+                            <label class="form-check-label ms-2 d-block" for="condMinor">
+                                <span class="fw-bold text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i> Minor Issue</span>
+                                <span class="d-block text-secondary small mt-1">Scratches or small non-critical issues. (-10 Trust Score)</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio p-3 border rounded">
+                            <input class="form-check-input mt-1 ms-1" type="radio" name="condition" id="condDamaged" value="Damaged">
+                            <label class="form-check-label ms-2 d-block" for="condDamaged">
+                                <span class="fw-bold text-danger"><i class="bi bi-x-circle-fill me-1"></i> Damaged</span>
+                                <span class="d-block text-secondary small mt-1">Broken, missing parts, or non-functional. (-30 Trust Score)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="button" id="submitBtn" class="btn btn-primary btn-lg py-3 fw-bold">
+                            Analyze & Complete Return
+                        </button>
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary py-3">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Loading Modal -->
+<div class="modal fade" id="aiModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-surface border-color">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="fw-bold text-primary">AI Analyzing Image...</h4>
+                <p class="text-secondary mb-0" id="aiProgressText">Scanning for structural damage and defects</p>
+                <div class="progress mt-4" style="height: 10px;">
+                    <div id="aiProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('returnForm');
+    const aiModal = new bootstrap.Modal(document.getElementById('aiModal'));
+    const progressBar = document.getElementById('aiProgressBar');
+    const progressText = document.getElementById('aiProgressText');
+    const fileInput = document.getElementById('aiImage');
+    
+    submitBtn.addEventListener('click', function(e) {
+        if (!form.checkValidity() || !fileInput.files.length) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Show AI Loading Modal
+        aiModal.show();
+        
+        // Simulate AI Processing
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            progressBar.style.width = progress + '%';
+            
+            if (progress === 30) {
+                progressText.innerText = 'Cross-referencing pre-checkout condition...';
+            } else if (progress === 70) {
+                progressText.innerText = 'Finalizing analysis...';
+            } else if (progress >= 100) {
+                clearInterval(interval);
+                progressText.innerText = 'Analysis Complete! Submitting...';
+                progressText.classList.add('text-success');
+                progressText.classList.remove('text-secondary');
+                progressBar.classList.replace('bg-primary', 'bg-success');
+                
+                // Submit form after short delay
+                setTimeout(() => {
+                    form.submit();
+                }, 800);
+            }
+        }, 100);
+    });
+});
+</script>
+{% endblock %}

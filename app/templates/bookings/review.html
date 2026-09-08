@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="bento-box shadow-sm border-0">
+                <div class="bento-box-header border-bottom pb-3 mb-4">
+                    <h2 class="fw-bold m-0"><i class="bi bi-star-fill text-warning me-2"></i> Leave a Review</h2>
+                    <p class="text-secondary mt-2 mb-0">How was your experience with <strong>{{ booking.resource.title }}</strong>?</p>
+                </div>
+
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.rating.label(class="form-label fw-bold") }}
+                        {% if form.rating.errors %}
+                            {{ form.rating(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.rating.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.rating(class="form-select") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.comment.label(class="form-label fw-bold") }}
+                        {% if form.comment.errors %}
+                            {{ form.comment(class="form-control is-invalid", rows=4) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.comment.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.comment(class="form-control", rows=4, placeholder="Share your experience (optional)...") }}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        {{ form.submit(class="btn btn-primary px-4 fw-bold") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

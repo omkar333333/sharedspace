@@ -134,6 +134,22 @@
                         <div class="invalid-feedback d-block">{% for error in form.sale_price.errors %}<span>{{ error }}</span>{% endfor %}</div>
                     {% endif %}
                 </div>
+
+                <div class="mb-3" id="deposit-container">
+                    {{ form.security_deposit.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-main border-color text-secondary currency-symbol-label">$</span>
+                        {% if form.security_deposit.errors %}
+                            {{ form.security_deposit(class="form-control is-invalid bg-main border-color text-primary") }}
+                        {% else %}
+                            {{ form.security_deposit(class="form-control bg-main border-color text-primary", placeholder="0.00 (Refundable deposit)") }}
+                        {% endif %}
+                    </div>
+                    <div class="form-text text-secondary mt-1"><i class="bi bi-shield-check"></i> This amount is held during the rental to protect against damages.</div>
+                    {% if form.security_deposit.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.security_deposit.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% endif %}
+                </div>
             </div>
             
             <!-- STEP 3 -->
@@ -152,6 +168,33 @@
                         {{ form.location(class="form-control bg-main border-color text-primary", placeholder="E.g., Engineering Building, Room 101") }}
                     {% endif %}
                     <div class="form-text text-secondary">Where should the buyer or borrower pick this up?</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        {{ form.latitude.label(class="form-label") }}
+                        {% if form.latitude.errors %}
+                            {{ form.latitude(class="form-control is-invalid bg-main border-color text-primary", id="latitude") }}
+                            <div class="invalid-feedback">{% for error in form.latitude.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% else %}
+                            {{ form.latitude(class="form-control bg-main border-color text-primary", placeholder="E.g., 42.3601", id="latitude") }}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mt-3 mt-md-0">
+                        {{ form.longitude.label(class="form-label") }}
+                        {% if form.longitude.errors %}
+                            {{ form.longitude(class="form-control is-invalid bg-main border-color text-primary", id="longitude") }}
+                            <div class="invalid-feedback">{% for error in form.longitude.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% else %}
+                            {{ form.longitude(class="form-control bg-main border-color text-primary", placeholder="E.g., -71.0942", id="longitude") }}
+                        {% endif %}
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-info" id="getLocationBtn">
+                            <i class="bi bi-geo-alt me-1"></i> Use My Current Location
+                        </button>
+                    </div>
+                    <div class="col-12"><div class="form-text text-secondary mt-2">Optional: Provide precise coordinates to appear on the map. If left blank, we will try to guess from the location name.</div></div>
                 </div>
             </div>
             
@@ -186,12 +229,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (val === 'Rent') {
             rentalContainer.style.display = 'block';
             saleContainer.style.display = 'none';
+            document.getElementById('deposit-container').style.display = 'block';
         } else if (val === 'Sale') {
             rentalContainer.style.display = 'none';
             saleContainer.style.display = 'block';
+            document.getElementById('deposit-container').style.display = 'none';
         } else {
             rentalContainer.style.display = 'block';
             saleContainer.style.display = 'block';
+            document.getElementById('deposit-container').style.display = 'block';
         }
     }
 
@@ -211,6 +257,48 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currencySelect) {
         currencySelect.addEventListener('change', updateCurrencySymbols);
         updateCurrencySymbols();
+    }
+
+    const getLocationBtn = document.getElementById('getLocationBtn');
+    if (getLocationBtn) {
+        getLocationBtn.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                getLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Locating...';
+                getLocationBtn.disabled = true;
+                
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const latInput = document.getElementById('latitude');
+                    const lngInput = document.getElementById('longitude');
+                    if(latInput && lngInput) {
+                        latInput.value = position.coords.latitude.toFixed(6);
+                        lngInput.value = position.coords.longitude.toFixed(6);
+                    }
+                    
+                    getLocationBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Location Found';
+                    getLocationBtn.classList.remove('btn-outline-info');
+                    getLocationBtn.classList.add('btn-success');
+                    
+                    // Reset button after 3 seconds
+                    setTimeout(() => {
+                        getLocationBtn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Use My Current Location';
+                        getLocationBtn.disabled = false;
+                        getLocationBtn.classList.remove('btn-success');
+                        getLocationBtn.classList.add('btn-outline-info');
+                    }, 3000);
+                }, function(error) {
+                    let msg = 'Error getting location.';
+                    if (error.code === 1) msg = 'Location permission denied.';
+                    else if (error.code === 2) msg = 'Location unavailable.';
+                    else if (error.code === 3) msg = 'Location request timed out.';
+                    alert(msg);
+                    
+                    getLocationBtn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Use My Current Location';
+                    getLocationBtn.disabled = false;
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
     }
 });
 </script>

@@ -2,7 +2,7 @@ import sys
 import os
 
 # 1. Provide the path to your project folder
-project_home = '/home/YOUR_USERNAME/YOUR_PROJECT_FOLDER'
+project_home = 'C:/Users/omkar/Downloads/pero'
 if project_home not in sys.path:
     sys.path = [project_home] + sys.path
 

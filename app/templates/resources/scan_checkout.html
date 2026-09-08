@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-6">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Return Equipment</h1>
+            <p class="text-secondary">You are returning {{ resource.title }}. Please report its condition.</p>
+        </div>
+        
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="card bg-surface border-color p-4 p-md-5 mb-4 shadow-sm">
+                
+                <div class="mb-4">
+                    {{ form.health_status.label(class="form-label") }}
+                    {% if form.health_status.errors %}
+                        {{ form.health_status(class="form-select form-select-lg is-invalid bg-main border-color text-primary") }}
+                        <div class="invalid-feedback">{% for error in form.health_status.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.health_status(class="form-select form-select-lg bg-main border-color text-primary") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.maintenance_notes.label(class="form-label") }}
+                    {% if form.maintenance_notes.errors %}
+                        {{ form.maintenance_notes(class="form-control form-control-lg is-invalid bg-main border-color text-primary", rows="4", placeholder="If damaged, explain what happened...") }}
+                        <div class="invalid-feedback">{% for error in form.maintenance_notes.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% else %}
+                        {{ form.maintenance_notes(class="form-control form-control-lg bg-main border-color text-primary", rows="4", placeholder="If damaged, explain what happened...") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.image_file.label(class="form-label") }}
+                    {{ form.image_file(class="form-control") }}
+                    <div class="form-text text-secondary">Upload a picture of the item's condition upon return (optional).</div>
+                    {% if form.image_file.errors %}
+                        <div class="text-danger small mt-1">{% for error in form.image_file.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-3 pt-3">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+                {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

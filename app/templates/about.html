@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="editorial-grid">
+    <!-- Left Column: Content and Navigation -->
+    <div class="editorial-content-col">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-4 col-xl-3 d-none d-md-block">
+                <div class="sticky-sidebar">
+                    <a href="#mission" class="sidebar-link active">Mission</a>
+                    <a href="#approach" class="sidebar-link">Approach</a>
+                    <a href="#priorities" class="sidebar-link">Priorities</a>
+                    <a href="#commitments" class="sidebar-link">Commitments</a>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="col-md-8 col-xl-9 px-md-4">
+                <h1 class="display-3 fw-bold mb-4" style="letter-spacing: -0.03em;">About Us</h1>
+                
+                <div id="mission" class="mb-5 pt-4">
+                    <p class="fs-5 text-secondary mb-5" style="line-height: 1.8;">
+                        We believe that access to tools and equipment shouldn't be a barrier to learning or creating. SharedSpace was built to foster a collaborative environment on campus where students can easily lend out equipment they aren't using, and borrow what they need, exactly when they need it.
+                    </p>
+                </div>
+
+                <div id="approach" class="mb-5 pt-4">
+                    <h3 class="fw-bold mb-4">Learn More:</h3>
+                    
+                    <ul class="arrow-list">
+                        <li class="arrow-list-item">
+                            <a href="#" class="arrow-list-link">
+                                Cost-Effective Sharing
+                                <span class="arrow-icon">&rarr;</span>
+                            </a>
+                        </li>
+                        <li class="arrow-list-item">
+                            <a href="#" class="arrow-list-link">
+                                Sustainable Campus
+                                <span class="arrow-icon">&rarr;</span>
+                            </a>
+                        </li>
+                        <li class="arrow-list-item">
+                            <a href="#" class="arrow-list-link">
+                                Smart QR Management
+                                <span class="arrow-icon">&rarr;</span>
+                            </a>
+                        </li>
+                        <li class="arrow-list-item">
+                            <a href="#" class="arrow-list-link">
+                                Community Driven
+                                <span class="arrow-icon">&rarr;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Gapless Photo Grid -->
+    <div class="editorial-img-col">
+        <!-- Photo 1 -->
+        <div style="background-color: #f1f5f9;">
+            <img src="https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?auto=format&fit=crop&q=80&w=800" class="editorial-img-item" alt="Electronics">
+        </div>
+        <!-- Photo 2 -->
+        <div style="background-color: #e2e8f0;">
+            <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=800" class="editorial-img-item" alt="Books">
+        </div>
+        <!-- Photo 3 -->
+        <div style="background-color: #cbd5e1;">
+            <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=800" class="editorial-img-item" alt="Tools">
+        </div>
+        <!-- Photo 4 -->
+        <div style="background-color: #94a3b8;">
+            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800" class="editorial-img-item" alt="Students">
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple script to update active state of sidebar links
+    document.addEventListener('DOMContentLoaded', () => {
+        const links = document.querySelectorAll('.sidebar-link');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                links.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    });
+</script>
+{% endblock %}

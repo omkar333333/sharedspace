@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5 my-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <i class="bi bi-cone-striped text-primary mb-4" style="font-size: 5rem;"></i>
+            <h1 class="fw-bold mb-3">{{ title }}</h1>
+            <p class="text-secondary fs-5 mb-4">We are currently working on this page. It will be available soon!</p>
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">Return Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

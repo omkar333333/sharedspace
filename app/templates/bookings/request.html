@@ -6,7 +6,7 @@
         <div class="dashboard-section p-4 p-md-5">
             <h2 class="fw-bold mb-4">Request Booking</h2>
             
-            <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-3">
+            <div class="d-flex align-items-center mb-4 p-3 bg-surface border border-color rounded-3">
                 <div class="rounded me-3 cat-gradient-bg d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem;
                 {% if resource.category == 'Tools' %}background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);{% elif resource.category == 'Electronics' %}background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);{% elif resource.category == 'Books' %}background: linear-gradient(135deg, #10b981 0%, #059669 100%);{% elif resource.category == 'Equipment' %}background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);{% else %}background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);{% endif %}
                 ">
@@ -19,8 +19,22 @@
                 <div>
                     <h5 class="fw-bold mb-1">{{ resource.title }}</h5>
                     <p class="mb-0 text-muted small">Owned by {{ resource.owner.username }}</p>
+                    {% if resource.security_deposit and resource.security_deposit > 0 %}
+                    <span class="badge bg-warning text-dark mt-2"><i class="bi bi-shield-lock me-1"></i> Security Deposit Required: {{ resource.currency_symbol }}{{ "%.2f"|format(resource.security_deposit) }}</span>
+                    {% endif %}
                 </div>
             </div>
+
+            {% if ai_prediction %}
+            <div class="alert alert-info border-color bg-surface d-flex align-items-center mb-4 border-start border-4 border-{{ ai_prediction.color }}">
+                <i class="bi {{ ai_prediction.icon }} fs-4 text-{{ ai_prediction.color }} me-3"></i>
+                <div>
+                    <strong>AI Predictor:</strong> 
+                    <span class="text-{{ ai_prediction.color }} fw-bold">{{ ai_prediction.level }}</span> - {{ ai_prediction.message }}
+                    <br><small class="text-secondary">Recommendation: Try booking during <strong>{{ ai_prediction.recommended_time }}</strong> for the best chance of approval.</small>
+                </div>
+            </div>
+            {% endif %}
 
             <form method="POST" action="">
                 {{ form.hidden_tag() }}
@@ -55,7 +69,7 @@
                     </div>
                 </div>
                 
-                <div class="mb-5">
+                <div class="mb-4">
                     {{ form.purpose.label(class="form-label fw-semibold") }}
                     {% if form.purpose.errors %}
                         {{ form.purpose(class="form-control is-invalid", rows="4") }}
@@ -66,6 +80,18 @@
                         </div>
                     {% else %}
                         {{ form.purpose(class="form-control", rows="4", placeholder="Explain why you need this resource and how it will be used...") }}
+                    {% endif %}
+                </div>
+
+                <div class="mb-5 form-check">
+                    {{ form.agree_to_terms(class="form-check-input") }}
+                    {{ form.agree_to_terms.label(class="form-check-label text-secondary") }}
+                    {% if form.agree_to_terms.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.agree_to_terms.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
                     {% endif %}
                 </div>
                 
