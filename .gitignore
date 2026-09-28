@@ -1,19 +1,18 @@
-# Python / Virtual Environment
+# Python Virtual Environments
 venv/
-ENV/
+.venv/
 env/
+ENV/
+.env
+
+# Byte-compiled / cache
 __pycache__/
 *.py[cod]
-
-# Database
-*.db
+*$py.class
 *.sqlite3
+instance/
 
-# IDEs
+# IDE files
 .idea/
 .vscode/
-
-# OS files
-.DS_Store
-Thumbs.db
-.venv/
+*.swp
